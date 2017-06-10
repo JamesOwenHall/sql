@@ -39,3 +39,28 @@ impl AggregateCall {
         self.aggregate.apply(self.expr.eval(row));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apply_sum() {
+        let mut aggregate = Aggregate::Sum(0);
+        for i in 0..5 {
+            aggregate.apply(Data::Int(i));
+        }
+
+        assert_eq!(Data::Int(10), aggregate.value());
+    }
+
+    #[test]
+    fn apply_avg() {
+        let mut aggregate = Aggregate::Avg(0, 0);
+        for i in 0..5 {
+            aggregate.apply(Data::Int(i));
+        }
+
+        assert_eq!(Data::Int(2), aggregate.value());
+    }
+}
