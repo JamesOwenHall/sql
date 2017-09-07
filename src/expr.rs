@@ -1,17 +1,25 @@
 use data::Data;
 use row::Row;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expr {
     Column(String),
+    AggregateCall(AggregateCall),
 }
 
 impl Expr {
     pub fn eval(&self, row: &Row) -> Data {
         match *self {
-            Expr::Column(ref name) => row.value(name).unwrap_or(Data::Null),
+            Expr::Column(ref name) => row.field_value(name).unwrap_or(Data::Null),
+            Expr::AggregateCall(ref call) => row.aggregate_value(call).unwrap_or(Data::Null),
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct AggregateCall {
+    pub function: String,
+    pub argument: Box<Expr>,
 }
 
 #[cfg(test)]
