@@ -1,6 +1,6 @@
 use expr::Expr;
 
 pub struct Query {
-    select: Vec<Expr>,
-    from: String,
+    pub select: Vec<Expr>,
+    pub from: String,
 }

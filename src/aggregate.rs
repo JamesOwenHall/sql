@@ -1,22 +1,35 @@
 use data::Data;
+use expr::Expr;
 
-pub trait Aggregate {
-    fn apply(&mut self, value: Data);
-    fn final_value(&self) -> Data;
+#[derive(Clone, Debug, PartialEq)]
+pub enum Aggregate {
+    Sum(i64),
 }
 
-pub struct Sum {
-    total: i64,
-}
-
-impl Aggregate for Sum {
-    fn apply(&mut self, value: Data) {
-        if let Data::Int(i) = value {
-            self.total += i;
+impl Aggregate {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "sum" => Some(Aggregate::Sum(0)),
+            _ => None,
         }
     }
 
-    fn final_value(&self) -> Data {
-        Data::Int(self.total)
+    pub fn apply(&mut self, value: Data) {
+        match (self, value) {
+            (&mut Aggregate::Sum(ref mut acc), Data::Int(i)) => *acc += i,
+            _ => {},
+        }
     }
+
+    pub fn final_value(&self) -> Data {
+        match self {
+            &Aggregate::Sum(acc) => Data::Int(acc),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct AggregateCall {
+    pub function: String,
+    pub argument: Box<Expr>,
 }

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
+use aggregate::AggregateCall;
 use data::Data;
-use expr::AggregateCall;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
-    fields: HashMap<String, Data>,
-    aggregates: HashMap<AggregateCall, Data>,
+    pub fields: HashMap<String, Data>,
+    pub aggregates: HashMap<AggregateCall, Data>,
 }
 
 impl Row {
@@ -14,20 +14,5 @@ impl Row {
             fields: HashMap::new(),
             aggregates: HashMap::new(),
         }
-    }
-
-    pub fn with_fields(fields: HashMap<String, Data>) -> Self {
-        Row {
-            fields: fields,
-            aggregates: HashMap::new(),
-        }
-    }
-
-    pub fn field_value(&self, column: &str) -> Option<Data> {
-        self.fields.get(column).cloned()
-    }
-
-    pub fn aggregate_value(&self, call: &AggregateCall) -> Option<Data> {
-        self.aggregates.get(call).cloned()
     }
 }
