@@ -4,4 +4,3 @@ pub mod executor;
 pub mod expr;
 pub mod query;
 pub mod row;
-pub mod vec_table;

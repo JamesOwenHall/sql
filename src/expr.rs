@@ -1,3 +1,4 @@
+use std::fmt::{self, Display, Formatter};
 use aggregate::AggregateCall;
 use data::Data;
 use row::Row;
@@ -33,6 +34,15 @@ impl Expr {
                 func(self);
                 call.argument.recurse(func);
             }
+        }
+    }
+}
+
+impl Display for Expr {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            &Expr::Column(ref name) => write!(f, "{}", name),
+            &Expr::AggregateCall(ref call) => write!(f, "{}({})", call.function, call.argument)
         }
     }
 }

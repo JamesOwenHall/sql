@@ -30,9 +30,19 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
         }
 
         return vec![aggregate_row];
-    }
+    } else {
+        let mut rows = Vec::new();
+        for input_row in source {
+            let mut row = Row::new();
+            for field in non_aggregates.iter() {
+                let name = format!("{}", field);
+                row.fields.insert(name, field.eval(&input_row));
+            }
+            rows.push(row);
+        }
 
-    unimplemented!();
+        rows
+    }
 }
 
 #[cfg(test)]
@@ -41,15 +51,17 @@ mod test {
     use aggregate::AggregateCall;
     use data::Data;
     use expr::Expr;
+    use row::make_rows;
 
     #[test]
     fn aggregate_query() {
-        let mut source = Vec::new();
-        for value in vec![1, 2, 3, 4, 5] {
-            let mut row = Row::new();
-            row.fields.insert(String::from("a"), Data::Int(value));
-            source.push(row);
-        }
+        let source = make_rows(vec!["a"], vec![
+            vec![Data::Int(1)],
+            vec![Data::Int(2)],
+            vec![Data::Int(3)],
+            vec![Data::Int(4)],
+            vec![Data::Int(5)],
+        ]);
 
         let call = AggregateCall{
             function: String::from("sum"),
@@ -65,6 +77,26 @@ mod test {
         let mut expected_row = Row::new();
         expected_row.aggregates.insert(call, Data::Int(15));
         let expected = vec![expected_row];
+        assert_eq!(expected, actual);
+    }
+
+#[test]
+    fn non_aggregate_query() {
+        let source = make_rows(vec!["a"], vec![
+            vec![Data::Int(1)],
+            vec![Data::Int(2)],
+            vec![Data::Int(3)],
+            vec![Data::Int(4)],
+            vec![Data::Int(5)],
+        ]);
+
+        let query = Query {
+            select: vec![Expr::Column(String::from("a"))],
+            from: String::new(),
+        };
+
+        let actual = execute(query, Box::new(source.clone().into_iter()));
+        let expected = source;
         assert_eq!(expected, actual);
     }
 }
