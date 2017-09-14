@@ -46,7 +46,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
     use aggregate::AggregateCall;
     use data::Data;
