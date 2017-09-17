@@ -1,5 +1,6 @@
 use std::iter::Peekable;
 use std::str::Chars;
+use parser::ParseError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
@@ -17,8 +18,18 @@ pub enum ScanError {
     UnknownToken(char)
 }
 
+impl Into<ParseError> for ScanError {
+    fn into(self) -> ParseError {
+        match self {
+            ScanError::UnexpectedEOF => ParseError::UnexpectedEOF,
+            ScanError::UnknownToken(c) => ParseError::UnknownToken(c),
+        }
+    }
+}
+
 type Result = ::std::result::Result<Token, ScanError>;
 
+#[derive(Clone, Debug)]
 pub struct Scanner<'a> {
     input: Peekable<Chars<'a>>,
 }
