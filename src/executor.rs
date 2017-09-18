@@ -1,4 +1,3 @@
-use aggregate::Aggregate;
 use query::Query;
 use row::Row;
 
@@ -8,7 +7,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
 
     for expr in query.select.iter() {
         if let Some(call) = expr.get_aggregate_call() {
-            let aggregate = Aggregate::from_name(&call.function).unwrap();
+            let aggregate = call.function.aggregate();
             aggregates.push((aggregate, call));
         } else {
             non_aggregates.push(expr.clone());
@@ -48,7 +47,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use aggregate::AggregateCall;
+    use aggregate::{AggregateCall, AggregateFunction};
     use data::Data;
     use expr::Expr;
     use row::make_rows;
@@ -64,7 +63,7 @@ mod tests {
         ]);
 
         let call = AggregateCall{
-            function: String::from("sum"),
+            function: AggregateFunction::Sum,
             argument: Box::new(Expr::Column(String::from("a"))),
         };
 

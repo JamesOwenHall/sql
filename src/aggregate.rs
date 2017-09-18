@@ -1,5 +1,34 @@
+use std::fmt;
 use data::Data;
 use expr::Expr;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum AggregateFunction {
+    Sum,
+}
+
+impl AggregateFunction {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name.to_lowercase().as_ref() {
+            "sum" => Some(AggregateFunction::Sum),
+            _ => None,
+        }
+    }
+
+    pub fn aggregate(&self) -> Aggregate {
+        match self {
+            &AggregateFunction::Sum => Aggregate::Sum(0)
+        }
+    }
+}
+
+impl fmt::Display for AggregateFunction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &AggregateFunction::Sum => write!(f, "sum")
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Aggregate {
@@ -7,13 +36,6 @@ pub enum Aggregate {
 }
 
 impl Aggregate {
-    pub fn from_name(name: &str) -> Option<Self> {
-        match name {
-            "sum" => Some(Aggregate::Sum(0)),
-            _ => None,
-        }
-    }
-
     pub fn apply(&mut self, value: Data) {
         match (self, value) {
             (&mut Aggregate::Sum(ref mut acc), Data::Int(i)) => *acc += i,
@@ -30,6 +52,6 @@ impl Aggregate {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AggregateCall {
-    pub function: String,
+    pub function: AggregateFunction,
     pub argument: Box<Expr>,
 }

@@ -1,5 +1,5 @@
 use std::iter::Peekable;
-use aggregate::AggregateCall;
+use aggregate::{AggregateCall, AggregateFunction};
 use expr::Expr;
 use query::Query;
 use scanner::{Scanner, Token};
@@ -52,7 +52,7 @@ impl<'a> Parser<'a> {
             let argument = self.parse_expr()?;
             self.expect(Token::CloseParen)?;
             Ok(Expr::AggregateCall(AggregateCall{
-                function: identifier,
+                function: AggregateFunction::from_name(&identifier).unwrap(),
                 argument: Box::new(argument),
             }))
         } else {
