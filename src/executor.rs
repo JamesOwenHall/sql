@@ -1,7 +1,8 @@
+use answer::Answer;
 use query::Query;
 use row::Row;
 
-pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
+pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
     let mut aggregates = Vec::new();
     let mut non_aggregates = Vec::new();
 
@@ -14,7 +15,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
         }
     }
 
-    if aggregates.len() > 0 {
+    let output_rows = if aggregates.len() > 0 {
         for row in source {
             for tuple in aggregates.iter_mut() {
                 let &mut(ref mut aggregate, ref call) = tuple;
@@ -28,7 +29,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
             aggregate_row.aggregates.insert(call.clone(), aggregate.final_value());
         }
 
-        return vec![aggregate_row];
+        vec![aggregate_row]
     } else {
         let mut rows = Vec::new();
         for input_row in source {
@@ -41,7 +42,23 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Vec<Row> {
         }
 
         rows
+    };
+
+    let mut columns = Vec::new();
+    for field in query.select.iter() {
+        columns.push(format!("{}", field));
     }
+
+    let mut rows = Vec::new();
+    for output_row in output_rows {
+        let mut row = Vec::new();
+        for field in query.select.iter() {
+            row.push(field.eval(&output_row));
+        }
+        rows.push(row);
+    }
+
+    Answer{columns: columns, rows: rows}
 }
 
 #[cfg(test)]
@@ -68,18 +85,20 @@ mod tests {
         };
 
         let query = Query {
-            select: vec![Expr::AggregateCall(call.clone())],
+            select: vec![Expr::AggregateCall(call)],
             from: String::new(),
         };
 
         let actual = execute(query, Box::new(source.into_iter()));
-        let mut expected_row = Row::new();
-        expected_row.aggregates.insert(call, Data::Int(15));
-        let expected = vec![expected_row];
+        let expected = Answer {
+            columns: vec![String::from("sum(a)")],
+            rows: vec![vec![Data::Int(15)]],
+        };
+
         assert_eq!(expected, actual);
     }
 
-#[test]
+    #[test]
     fn non_aggregate_query() {
         let source = make_rows(vec!["a"], vec![
             vec![Data::Int(1)],
@@ -95,7 +114,17 @@ mod tests {
         };
 
         let actual = execute(query, Box::new(source.clone().into_iter()));
-        let expected = source;
+        let expected = Answer {
+            columns: vec![String::from("a")],
+            rows: vec![
+                vec![Data::Int(1)],
+                vec![Data::Int(2)],
+                vec![Data::Int(3)],
+                vec![Data::Int(4)],
+                vec![Data::Int(5)],
+            ],
+        };
+
         assert_eq!(expected, actual);
     }
 }
