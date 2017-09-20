@@ -14,6 +14,7 @@ pub enum ParseError {
     UnexpectedEOF,
     UnknownToken(char),
     UnexpectedToken(Token),
+    UnknownFunction(String),
 }
 
 type Result<A> = ::std::result::Result<A, ParseError>;
@@ -51,8 +52,14 @@ impl<'a> Parser<'a> {
             self.scanner.next();
             let argument = self.parse_expr()?;
             self.expect(Token::CloseParen)?;
+
+            let aggregate_function = match AggregateFunction::from_name(&identifier) {
+                Some(func) => func,
+                None => return Err(ParseError::UnknownFunction(identifier)),
+            };
+
             Ok(Expr::AggregateCall(AggregateCall{
-                function: AggregateFunction::from_name(&identifier).unwrap(),
+                function: aggregate_function,
                 argument: Box::new(argument),
             }))
         } else {
@@ -76,7 +83,15 @@ mod tests {
 
     #[test]
     fn parse_aggregate_query() {
-        let input = "select sum(value) from 'foo'";
+        let input = "select sum(value) from foo";
         parse(input).unwrap();
+    }
+
+    #[test]
+    fn unknown_function() {
+        let input = "select blah(value) from foo";
+        let actual = parse(input);
+        let expected = Err(ParseError::UnknownFunction(String::from("blah")));
+        assert_eq!(expected, actual);
     }
 }
