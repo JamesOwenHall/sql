@@ -31,10 +31,18 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Result<Query> {
         self.expect(Token::Select)?;
         let select = self.parse_expr()?;
+        
         self.expect(Token::From)?;
+        let from = match self.scanner.next() {
+            Some(Ok(Token::Identifier(i))) => i,
+            Some(Ok(t)) => return Err(ParseError::UnexpectedToken(t)),
+            Some(Err(e)) => return Err(e.into()),
+            None => return Err(ParseError::UnexpectedEOF),
+        };
+
         Ok(Query{
             select: vec![select],
-            from: String::new(),
+            from: from,
         })
     }
 
