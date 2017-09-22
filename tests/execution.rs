@@ -13,11 +13,11 @@ fn query_execution() {
         vec![Data::Int(5), Data::Int(6)],
     ]);
 
-    let query = sql::parse("select sum(a) from bar").unwrap();
+    let query = sql::parse("select sum(a), sum(b) from bar").unwrap();
     let actual = execute(query, Box::new(input.into_iter()));
     let expected = Answer {
-        columns: vec![String::from("sum(a)")],
-        rows: vec![vec![Data::Int(9)]],
+        columns: vec!["sum(a)".to_string(), "sum(b)".to_string()],
+        rows: vec![vec![Data::Int(9), Data::Int(12)]],
     };
 
     assert_eq!(expected, actual);

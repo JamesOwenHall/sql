@@ -30,7 +30,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Result<Query> {
         self.expect(Token::Select)?;
-        let select = self.parse_expr()?;
+        let select = self.parse_select()?;
         
         self.expect(Token::From)?;
         let from = match self.scanner.next() {
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Query{
-            select: vec![select],
+            select: select,
             from: from,
         })
     }
@@ -52,6 +52,17 @@ impl<'a> Parser<'a> {
             Some(Ok(Token::Identifier(i))) => self.parse_identifier(i),
             Some(Err(e)) => Err(e.into()),
             Some(Ok(t)) => Err(ParseError::UnexpectedToken(t)),
+        }
+    }
+
+    fn parse_select(&mut self) -> Result<Vec<Expr>> {
+        let mut exprs = Vec::new();
+        loop {
+            exprs.push(self.parse_expr()?);
+            match self.scanner.peek().cloned() {
+                Some(Ok(Token::Comma)) => self.scanner.next(),
+                _ => return Ok(exprs),
+            };
         }
     }
 
