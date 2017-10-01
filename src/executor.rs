@@ -1,65 +1,99 @@
+use std::collections::HashMap;
+use aggregate::AggregateCall;
 use answer::Answer;
 use expr::Expr;
 use query::Query;
 use row::Row;
 
-pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
-    let mut aggregates = Vec::new();
-    let mut non_aggregates = Vec::new();
+struct Executor {
+    query: Query,
+    aggregate_calls: Vec<AggregateCall>,
+    non_aggregates: Vec<Expr>,
+}
 
-    for expr in query.select.iter() {
-        if let Some(call) = expr.get_aggregate_call() {
-            let aggregate = call.function.aggregate();
-            aggregates.push((aggregate, call));
-        } else {
-            non_aggregates.push(expr.clone());
+impl Executor {
+    fn new(query: Query) -> Self {
+        let mut aggregates = Vec::new();
+        let mut non_aggregates = Vec::new();
+
+        for expr in query.select.iter() {
+            if let Some(call) = expr.get_aggregate_call() {
+                aggregates.push(call);
+            } else {
+                non_aggregates.push(expr.clone());
+            }
+        }
+
+        Executor {
+            query: query,
+            aggregate_calls: aggregates,
+            non_aggregates: non_aggregates,
         }
     }
 
-    let output_rows = if aggregates.len() > 0 {
+    fn execute(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+        if self.aggregate_calls.is_empty() {
+            self.execute_non_aggregate(source)
+        } else {
+            self.execute_aggregate(source)
+        }
+    }
+
+    fn execute_non_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+        let mut rows = Vec::new();
+        for input_row in source {
+            let mut row = Vec::new();
+            for field in self.non_aggregates.iter() {
+                row.push(field.eval(&input_row));
+            }
+            rows.push(row);
+        }
+
+        Answer {
+            columns: self.get_columns(),
+            rows: rows,
+        }
+    }
+
+    fn execute_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+        let mut aggregates = HashMap::new();
+        for call in self.aggregate_calls.iter() {
+            aggregates.insert(call.clone(), call.function.aggregate());
+        }
+
         for row in source {
-            for tuple in aggregates.iter_mut() {
-                let &mut(ref mut aggregate, ref call) = tuple;
+            for (call, aggregate) in aggregates.iter_mut() {
                 aggregate.apply(call.argument.eval(&row));
             }
         }
 
         let mut aggregate_row = Row::new();
-        for tuple in aggregates.iter() {
-            let &(ref aggregate, ref call) = tuple;
-            aggregate_row.fields.insert(Expr::AggregateCall(call.clone()), aggregate.final_value());
+        for (call, aggregate) in aggregates {
+            aggregate_row.fields.insert(Expr::AggregateCall(call), aggregate.final_value());
         }
 
-        vec![aggregate_row]
-    } else {
-        let mut rows = Vec::new();
-        for input_row in source {
-            let mut row = Row::new();
-            for field in non_aggregates.iter() {
-                let name = format!("{}", field);
-                row.fields.insert(Expr::Column(name), field.eval(&input_row));
-            }
-            rows.push(row);
+        let mut output_row = Vec::new();
+        for field in self.query.select.iter() {
+            output_row.push(field.eval(&aggregate_row));
         }
 
-        rows
-    };
-
-    let mut columns = Vec::new();
-    for field in query.select.iter() {
-        columns.push(format!("{}", field));
+        Answer {
+            columns: self.get_columns(),
+            rows: vec![output_row],
+        }
     }
 
-    let mut rows = Vec::new();
-    for output_row in output_rows {
-        let mut row = Vec::new();
-        for field in query.select.iter() {
-            row.push(field.eval(&output_row));
+    fn get_columns(&self) -> Vec<String> {
+        let mut columns = Vec::new();
+        for field in self.query.select.iter() {
+            columns.push(format!("{}", field));
         }
-        rows.push(row);
+        columns
     }
+}
 
-    Answer{columns: columns, rows: rows}
+pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
+    Executor::new(query).execute(source)
 }
 
 #[cfg(test)]
