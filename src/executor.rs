@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use aggregate::AggregateCall;
+use aggregate::{Aggregate, AggregateCall};
 use answer::Answer;
+use data::Data;
 use expr::Expr;
 use query::Query;
 use row::Row;
@@ -51,30 +52,39 @@ impl Executor {
     }
 
     fn execute_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
-        let mut aggregates = HashMap::new();
-        for call in self.aggregate_calls.iter() {
-            aggregates.insert(call.clone(), call.function.aggregate());
-        }
+        let mut groups = HashMap::new();
 
         for row in source {
-            for (call, aggregate) in aggregates.iter_mut() {
+            let group = self.get_group(&row);
+            let group_aggregates = groups
+                .entry(group.clone())
+                .or_insert_with(|| self.make_aggregates());
+
+            for (call, aggregate) in group_aggregates.iter_mut() {
                 aggregate.apply(call.argument.eval(&row));
             }
         }
 
-        let mut aggregate_row = Row::new();
-        for (call, aggregate) in aggregates {
-            aggregate_row.fields.insert(Expr::AggregateCall(call), aggregate.final_value());
-        }
+        let mut rows = Vec::new();
+        for (group, group_aggregates) in groups {
+            let mut row = Row::new();
+            for (call, aggregate) in group_aggregates {
+                row.fields.insert(Expr::AggregateCall(call), aggregate.final_value());
+            }
+            for (index, val) in group.iter().enumerate() {
+                row.fields.insert(self.query.group[index].clone(), val.clone());
+            }
 
-        let mut output_row = Vec::new();
-        for field in self.query.select.iter() {
-            output_row.push(field.eval(&aggregate_row));
+            let mut output_row = Vec::new();
+            for field in self.query.select.iter() {
+                output_row.push(field.eval(&row));
+            }
+            rows.push(output_row);
         }
 
         Answer {
             columns: self.get_columns(),
-            rows: vec![output_row],
+            rows: rows,
         }
     }
 
@@ -84,6 +94,22 @@ impl Executor {
             columns.push(format!("{}", field));
         }
         columns
+    }
+
+    fn get_group(&self, row: &Row) -> Vec<Data> {
+        let mut group = Vec::new();
+        for field in self.query.group.iter() {
+            group.push(field.eval(row));
+        }
+        group
+    }
+
+    fn make_aggregates(&self) -> HashMap<AggregateCall, Aggregate> {
+        let mut aggregates = HashMap::new();
+        for call in self.aggregate_calls.iter() {
+            aggregates.insert(call.clone(), call.function.aggregate());
+        }
+        aggregates
     }
 }
 
@@ -117,6 +143,7 @@ mod tests {
         let query = Query {
             select: vec![Expr::AggregateCall(call)],
             from: String::new(),
+            group: vec![],
         };
 
         let actual = execute(query, Box::new(source.into_iter()));
@@ -141,6 +168,7 @@ mod tests {
         let query = Query {
             select: vec![Expr::Column(String::from("a"))],
             from: String::new(),
+            group: vec![],
         };
 
         let actual = execute(query, Box::new(source.clone().into_iter()));

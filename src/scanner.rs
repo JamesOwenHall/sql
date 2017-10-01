@@ -6,6 +6,8 @@ use parser::ParseError;
 pub enum Token {
     Select,
     From,
+    Group,
+    By,
     Identifier(String),
     OpenParen,
     CloseParen,
@@ -95,6 +97,8 @@ impl<'a> Scanner<'a> {
         match buf.to_lowercase().as_ref() {
             "select" => Token::Select,
             "from" => Token::From,
+            "group" => Token::Group,
+            "by" => Token::By,
             _ => Token::Identifier(buf),
         }
     }
@@ -127,10 +131,12 @@ mod tests {
 
     #[test]
     fn identifiers() {
-        let mut scanner = Scanner::new("select FrOm foo");
+        let mut scanner = Scanner::new("select FrOm foo group by");
         assert_eq!(scanner.next(), Some(Ok(Token::Select)));
         assert_eq!(scanner.next(), Some(Ok(Token::From)));
         assert_eq!(scanner.next(), Some(Ok(Token::Identifier(String::from("foo")))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Group)));
+        assert_eq!(scanner.next(), Some(Ok(Token::By)));
         assert_eq!(scanner.next(), None);
     }
 

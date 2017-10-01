@@ -22,3 +22,24 @@ fn query_execution() {
 
     assert_eq!(expected, actual);
 }
+
+#[test]
+fn group_query_execution() {
+    let input = make_rows(vec!["a", "b"], vec![
+        vec![Data::Int(1), Data::Int(0)],
+        vec![Data::Int(3), Data::Int(1)],
+        vec![Data::Int(5), Data::Int(1)],
+    ]);
+
+    let query = sql::parse("select sum(a), b from bar group by b").unwrap();
+    let actual = execute(query, Box::new(input.into_iter()));
+    let expected = Answer {
+        columns: vec!["sum(a)".to_string(), "b".to_string()],
+        rows: vec![
+            vec![Data::Int(1), Data::Int(0)],
+            vec![Data::Int(8), Data::Int(1)],
+        ],
+    };
+
+    assert_eq!(expected, actual);
+}

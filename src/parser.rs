@@ -40,9 +40,15 @@ impl<'a> Parser<'a> {
             None => return Err(ParseError::UnexpectedEOF),
         };
 
+        let group = match self.scanner.peek().cloned() {
+            Some(Ok(Token::Group)) => self.parse_group_by()?,
+            _ => vec![],
+        };
+
         Ok(Query{
             select: select,
             from: from,
+            group: group,
         })
     }
 
@@ -86,6 +92,20 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_group_by(&mut self) -> Result<Vec<Expr>> {
+        self.expect(Token::Group)?;
+        self.expect(Token::By)?;
+
+        let mut exprs = Vec::new();
+        loop {
+            exprs.push(self.parse_expr()?);
+            match self.scanner.peek().cloned() {
+                Some(Ok(Token::Comma)) => self.scanner.next(),
+                _ => return Ok(exprs),
+            };
+        }
+    }
+
     fn expect(&mut self, t: Token) -> Result<()> {
         match self.scanner.next() {
             Some(Ok(ref token)) if *token == t => Ok(()),
@@ -103,6 +123,12 @@ mod tests {
     #[test]
     fn parse_aggregate_query() {
         let input = "select sum(value) from foo";
+        parse(input).unwrap();
+    }
+
+    #[test]
+    fn parse_group_query() {
+        let input = "select sum(a), b from foo group by b";
         parse(input).unwrap();
     }
 
