@@ -8,26 +8,21 @@ use row::Row;
 struct Executor {
     query: Query,
     aggregate_calls: Vec<AggregateCall>,
-    non_aggregates: Vec<Expr>,
 }
 
 impl Executor {
     fn new(query: Query) -> Self {
         let mut aggregates = Vec::new();
-        let mut non_aggregates = Vec::new();
 
         for expr in query.select.iter() {
             if let Some(call) = expr.get_aggregate_call() {
                 aggregates.push(call);
-            } else {
-                non_aggregates.push(expr.clone());
             }
         }
 
         Executor {
             query: query,
             aggregate_calls: aggregates,
-            non_aggregates: non_aggregates,
         }
     }
 
@@ -43,7 +38,7 @@ impl Executor {
         let mut rows = Vec::new();
         for input_row in source {
             let mut row = Vec::new();
-            for field in self.non_aggregates.iter() {
+            for field in self.query.select.iter() {
                 row.push(field.eval(&input_row));
             }
             rows.push(row);
