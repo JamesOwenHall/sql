@@ -1,4 +1,5 @@
 use answer::Answer;
+use expr::Expr;
 use query::Query;
 use row::Row;
 
@@ -26,7 +27,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
         let mut aggregate_row = Row::new();
         for tuple in aggregates.iter() {
             let &(ref aggregate, ref call) = tuple;
-            aggregate_row.aggregates.insert(call.clone(), aggregate.final_value());
+            aggregate_row.fields.insert(Expr::AggregateCall(call.clone()), aggregate.final_value());
         }
 
         vec![aggregate_row]
@@ -36,7 +37,7 @@ pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
             let mut row = Row::new();
             for field in non_aggregates.iter() {
                 let name = format!("{}", field);
-                row.fields.insert(name, field.eval(&input_row));
+                row.fields.insert(Expr::Column(name), field.eval(&input_row));
             }
             rows.push(row);
         }
