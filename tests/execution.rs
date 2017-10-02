@@ -16,7 +16,7 @@ fn query_execution() {
     let query = sql::parse("select sum(a), sum(b) from bar").unwrap();
     let actual = execute(query, Box::new(input.into_iter()));
     let expected = Answer {
-        columns: vec!["sum(a)".to_string(), "sum(b)".to_string()],
+        columns: vec![r#"sum("a")"#.to_string(), r#"sum("b")"#.to_string()],
         rows: vec![vec![Data::Int(9), Data::Int(12)]],
     };
 
@@ -34,7 +34,7 @@ fn group_query_execution() {
     let query = sql::parse("select sum(a), b from bar group by b").unwrap();
     let actual = execute(query, Box::new(input.into_iter()));
     let expected = Answer {
-        columns: vec!["sum(a)".to_string(), "b".to_string()],
+        columns: vec![r#"sum("a")"#.to_string(), r#""b""#.to_string()],
         rows: vec![
             vec![Data::Int(1), Data::Int(0)],
             vec![Data::Int(8), Data::Int(1)],

@@ -41,7 +41,7 @@ impl Expr {
 impl Display for Expr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            &Expr::Column(ref name) => write!(f, "{}", name),
+            &Expr::Column(ref name) => write!(f, r#""{}""#, name),
             &Expr::AggregateCall(ref call) => write!(f, "{}({})", call.function, call.argument)
         }
     }

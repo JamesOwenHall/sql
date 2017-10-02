@@ -9,6 +9,7 @@ pub enum Token {
     Group,
     By,
     Identifier(String),
+    String(String),
     OpenParen,
     CloseParen,
     Comma,
@@ -29,7 +30,7 @@ impl Into<ParseError> for ScanError {
     }
 }
 
-type Result = ::std::result::Result<Token, ScanError>;
+type Result<A> = ::std::result::Result<A, ScanError>;
 
 #[derive(Clone, Debug)]
 pub struct Scanner<'a> {
@@ -37,7 +38,7 @@ pub struct Scanner<'a> {
 }
 
 impl<'a> Iterator for Scanner<'a> {
-    type Item = Result;
+    type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.skip_spaces();
@@ -60,6 +61,8 @@ impl<'a> Iterator for Scanner<'a> {
                 self.input.next();
                 Ok(Token::Comma)
             },
+            '\'' => self.read_string(),
+            '"' => self.read_quoted_identifier(),
             c if Self::is_letter(c) => Ok(self.read_identifier()),
             c => Err(ScanError::UnknownToken(c)),
         })
@@ -103,6 +106,34 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn read_string(&mut self) -> Result<Token> {
+        self.read_quoted_token('\'').map(|s| Token::String(s))
+    }
+
+    fn read_quoted_identifier(&mut self) -> Result<Token> {
+        self.read_quoted_token('"').map(|s| Token::Identifier(s))
+    }
+
+    fn read_quoted_token(&mut self, delimiter: char) -> Result<String> {
+        assert_eq!(Some(delimiter), self.input.next());
+
+        let mut string = String::new();
+        loop {
+            match self.input.next() {
+                None => return Err(ScanError::UnexpectedEOF),
+                Some(c) if c == delimiter => return Ok(string),
+                Some('\\') => {
+                    match self.input.next() {
+                        Some('n') => string.push('\n'),
+                        Some(c) => string.push(c),
+                        None => return Err(ScanError::UnexpectedEOF),
+                    }
+                },
+                Some(c) => string.push(c),
+            }
+        }
+    }
+
     fn is_space(c: char) -> bool {
         c == ' ' || c == '\t' || c == '\r' || c == '\n'
     }
@@ -131,13 +162,24 @@ mod tests {
 
     #[test]
     fn identifiers() {
-        let mut scanner = Scanner::new("select FrOm foo group by");
+        let mut scanner = Scanner::new(r#"select FrOm foo group by "a field""#);
         assert_eq!(scanner.next(), Some(Ok(Token::Select)));
         assert_eq!(scanner.next(), Some(Ok(Token::From)));
-        assert_eq!(scanner.next(), Some(Ok(Token::Identifier(String::from("foo")))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Identifier(("foo".to_string())))));
         assert_eq!(scanner.next(), Some(Ok(Token::Group)));
         assert_eq!(scanner.next(), Some(Ok(Token::By)));
+        assert_eq!(scanner.next(), Some(Ok(Token::Identifier("a field".to_string()))));
         assert_eq!(scanner.next(), None);
+    }
+
+    #[test]
+    fn strings() {
+        let mut scanner = Scanner::new(r#"'' 'foo' '\'' '\n' '\\'"#);
+        assert_eq!(scanner.next(), Some(Ok(Token::String("".to_string()))));
+        assert_eq!(scanner.next(), Some(Ok(Token::String("foo".to_string()))));
+        assert_eq!(scanner.next(), Some(Ok(Token::String("'".to_string()))));
+        assert_eq!(scanner.next(), Some(Ok(Token::String("\n".to_string()))));
+        assert_eq!(scanner.next(), Some(Ok(Token::String("\\".to_string()))));
     }
 
     #[test]

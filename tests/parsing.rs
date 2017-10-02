@@ -3,9 +3,9 @@ extern crate sql;
 #[test]
 fn query_format() {
     let inputs = vec![
-        "select a, b from c",
-        "select sum(a), sum(b) from c",
-        "select sum(a), b from c group by b",
+        r#"select "a", "b" from "c""#,
+        r#"select sum("a"), sum("b") from "c""#,
+        r#"select sum("a"), "b" from "c" group by "b""#,
     ];
 
     for input in inputs {
