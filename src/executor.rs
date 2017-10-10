@@ -9,30 +9,43 @@ use row::Row;
 struct Executor {
     query: Query,
     aggregate_calls: Vec<AggregateCall>,
+    order_indices: Vec<usize>,
 }
 
 impl Executor {
     fn new(query: Query) -> Self {
         let mut aggregates = Vec::new();
-
         for expr in query.select.iter() {
             if let Some(call) = expr.get_aggregate_call() {
                 aggregates.push(call);
             }
         }
 
+        let mut order_indices = Vec::new();
+        for expr in query.order.iter() {
+            for (index, select) in query.select.iter().enumerate() {
+                if select == expr {
+                    order_indices.push(index);
+                }
+            }
+        }
+
         Executor {
             query: query,
             aggregate_calls: aggregates,
+            order_indices: order_indices,
         }
     }
 
     fn execute(&self, source: Box<Iterator<Item=Row>>) -> Answer {
-        if self.aggregate_calls.is_empty() {
+        let mut answer = if self.aggregate_calls.is_empty() {
             self.execute_non_aggregate(source)
         } else {
             self.execute_aggregate(source)
-        }
+        };
+
+        self.sort_answer(&mut answer);
+        answer
     }
 
     fn execute_non_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
@@ -85,6 +98,18 @@ impl Executor {
         Answer {
             columns: self.get_columns(),
             rows: rows,
+        }
+    }
+
+    fn sort_answer(&self, answer: &mut Answer) {
+        if !self.order_indices.is_empty() {
+            answer.rows.sort_unstable_by_key(|row| {
+                let mut sort_keys = Vec::with_capacity(self.order_indices.len());
+                for index in self.order_indices.iter() {
+                    sort_keys.push(row[*index].clone());
+                }
+                sort_keys
+            });
         }
     }
 
@@ -144,6 +169,7 @@ mod tests {
             select: vec![Expr::AggregateCall(call)],
             from: String::new(),
             group: vec![],
+            order: vec![],
         };
 
         let actual = execute(query, Box::new(source.into_iter()));
@@ -169,6 +195,7 @@ mod tests {
             select: vec![Expr::Column(String::from("a"))],
             from: String::new(),
             group: vec![],
+            order: vec![],
         };
 
         let actual = execute(query, Box::new(source.clone().into_iter()));

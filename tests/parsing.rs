@@ -6,6 +6,8 @@ fn query_format() {
         r#"select "a", "b" from "c""#,
         r#"select sum("a"), sum("b") from "c""#,
         r#"select sum("a"), "b" from "c" group by "b""#,
+        r#"select "a", "b" from "c" order by "b""#,
+        r#"select "a", "b" from "c" group by "a" order by "b""#,
     ];
 
     for input in inputs {

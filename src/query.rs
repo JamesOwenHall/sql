@@ -6,6 +6,7 @@ pub struct Query {
     pub select: Vec<Expr>,
     pub from: String,
     pub group: Vec<Expr>,
+    pub order: Vec<Expr>,
 }
 
 impl fmt::Display for Query {
@@ -20,6 +21,13 @@ impl fmt::Display for Query {
                 .map(|expr| format!("{}", expr))
                 .collect();
             write!(f, " group by {}", group.join(", "))?;
+        }
+
+        if !self.order.is_empty() {
+            let order: Vec<String> = self.order.iter()
+                .map(|expr| format!("{}", expr))
+                .collect();
+            write!(f, " order by {}", order.join(", "))?;
         }
 
         Ok(())

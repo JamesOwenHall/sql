@@ -45,10 +45,16 @@ impl<'a> Parser<'a> {
             _ => vec![],
         };
 
-        Ok(Query{
+        let order = match self.scanner.peek().cloned() {
+            Some(Ok(Token::Order)) => self.parse_order_by()?,
+            _ => vec![],
+        };
+
+        Ok(Query {
             select: select,
             from: from,
             group: group,
+            order: order,
         })
     }
 
@@ -95,7 +101,16 @@ impl<'a> Parser<'a> {
     fn parse_group_by(&mut self) -> Result<Vec<Expr>> {
         self.expect(Token::Group)?;
         self.expect(Token::By)?;
+        self.parse_comma_separated_exprs()
+    }
 
+    fn parse_order_by(&mut self) -> Result<Vec<Expr>> {
+        self.expect(Token::Order)?;
+        self.expect(Token::By)?;
+        self.parse_comma_separated_exprs()
+    }
+
+    fn parse_comma_separated_exprs(&mut self) -> Result<Vec<Expr>> {
         let mut exprs = Vec::new();
         loop {
             exprs.push(self.parse_expr()?);
@@ -129,6 +144,12 @@ mod tests {
     #[test]
     fn parse_group_query() {
         let input = "select sum(a), b from foo group by b";
+        parse(input).unwrap();
+    }
+
+    #[test]
+    fn parse_order_query() {
+        let input = "select sum(a), b from foo order by b";
         parse(input).unwrap();
     }
 

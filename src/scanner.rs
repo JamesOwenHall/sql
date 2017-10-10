@@ -7,6 +7,7 @@ pub enum Token {
     Select,
     From,
     Group,
+    Order,
     By,
     Identifier(String),
     String(String),
@@ -101,6 +102,7 @@ impl<'a> Scanner<'a> {
             "select" => Token::Select,
             "from" => Token::From,
             "group" => Token::Group,
+            "order" => Token::Order,
             "by" => Token::By,
             _ => Token::Identifier(buf),
         }
@@ -162,11 +164,12 @@ mod tests {
 
     #[test]
     fn identifiers() {
-        let mut scanner = Scanner::new(r#"select FrOm foo group by "a field""#);
+        let mut scanner = Scanner::new(r#"select FrOm foo group order by "a field""#);
         assert_eq!(scanner.next(), Some(Ok(Token::Select)));
         assert_eq!(scanner.next(), Some(Ok(Token::From)));
         assert_eq!(scanner.next(), Some(Ok(Token::Identifier(("foo".to_string())))));
         assert_eq!(scanner.next(), Some(Ok(Token::Group)));
+        assert_eq!(scanner.next(), Some(Ok(Token::Order)));
         assert_eq!(scanner.next(), Some(Ok(Token::By)));
         assert_eq!(scanner.next(), Some(Ok(Token::Identifier("a field".to_string()))));
         assert_eq!(scanner.next(), None);
