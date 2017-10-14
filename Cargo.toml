@@ -5,3 +5,4 @@ authors = ["James Hall <james.hall@shopify.com>"]
 
 [dependencies]
 clap = "2.26"
+csv = "1.0.0-beta.5"
