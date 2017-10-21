@@ -5,6 +5,7 @@ use data::Data;
 use expr::Expr;
 use query::Query;
 use row::Row;
+use source::{Source, SourceError};
 
 struct Executor {
     query: Query,
@@ -37,20 +38,21 @@ impl Executor {
         }
     }
 
-    fn execute(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+    fn execute(&self, source: Source) -> Result<Answer, SourceError> {
         let mut answer = if self.aggregate_calls.is_empty() {
-            self.execute_non_aggregate(source)
+            self.execute_non_aggregate(source)?
         } else {
-            self.execute_aggregate(source)
+            self.execute_aggregate(source)?
         };
 
         self.sort_answer(&mut answer);
-        answer
+        Ok(answer)
     }
 
-    fn execute_non_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+    fn execute_non_aggregate(&self, source: Source) -> Result<Answer, SourceError> {
         let mut rows = Vec::new();
         for input_row in source {
+            let input_row = input_row?;
             let mut row = Vec::new();
             for field in self.query.select.iter() {
                 row.push(field.eval(&input_row));
@@ -58,16 +60,17 @@ impl Executor {
             rows.push(row);
         }
 
-        Answer {
+        Ok(Answer {
             columns: self.get_columns(),
             rows: rows,
-        }
+        })
     }
 
-    fn execute_aggregate(&self, source: Box<Iterator<Item=Row>>) -> Answer {
+    fn execute_aggregate(&self, source: Source) -> Result<Answer, SourceError> {
         let mut groups = HashMap::new();
 
         for row in source {
+            let row = row?;
             let group = self.get_group(&row);
             let group_aggregates = groups
                 .entry(group.clone())
@@ -95,10 +98,10 @@ impl Executor {
             rows.push(output_row);
         }
 
-        Answer {
+        Ok(Answer {
             columns: self.get_columns(),
             rows: rows,
-        }
+        })
     }
 
     fn sort_answer(&self, answer: &mut Answer) {
@@ -138,7 +141,7 @@ impl Executor {
     }
 }
 
-pub fn execute(query: Query, source: Box<Iterator<Item=Row>>) -> Answer {
+pub fn execute(query: Query, source: Source) -> Result<Answer, SourceError> {
     Executor::new(query).execute(source)
 }
 
@@ -172,7 +175,7 @@ mod tests {
             order: vec![],
         };
 
-        let actual = execute(query, Box::new(source.into_iter()));
+        let actual = execute(query, Box::new(source.into_iter())).unwrap();
         let expected = Answer {
             columns: vec![String::from(r#"sum("a")"#)],
             rows: vec![vec![Data::Int(15)]],
@@ -198,7 +201,7 @@ mod tests {
             order: vec![],
         };
 
-        let actual = execute(query, Box::new(source.clone().into_iter()));
+        let actual = execute(query, Box::new(source.clone().into_iter())).unwrap();
         let expected = Answer {
             columns: vec![String::from(r#""a""#)],
             rows: vec![

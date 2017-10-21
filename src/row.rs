@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use data::Data;
 use expr::Expr;
+use source::SourceError;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
@@ -15,7 +16,7 @@ impl Row {
     }
 }
 
-pub fn make_rows(columns: Vec<&'static str>, values: Vec<Vec<Data>>) -> Vec<Row> {
+pub fn make_rows(columns: Vec<&'static str>, values: Vec<Vec<Data>>) -> Vec<Result<Row, SourceError>> {
     let mut rows = Vec::new();
 
     for input_row in values {
@@ -24,7 +25,7 @@ pub fn make_rows(columns: Vec<&'static str>, values: Vec<Vec<Data>>) -> Vec<Row>
             let name = columns[index].to_owned();
             row.fields.insert(Expr::Column(name), value);
         }
-        rows.push(row);
+        rows.push(Ok(row));
     }
 
     rows

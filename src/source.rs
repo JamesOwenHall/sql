@@ -1,16 +1,28 @@
+use std::error::Error;
 use std::fs::File;
-use std::io;
 use data::Data;
 use expr::Expr;
 use row::Row;
 use csv;
 
-pub fn open_file(filename: &str) -> io::Result<Box<Iterator<Item=Row>>> {
+pub type Source = Box<Iterator<Item=Result<Row, SourceError>>>;
+
+#[derive(Clone, Debug)]
+pub struct SourceError {
+    description: String
+}
+
+impl<E: Error> From<E> for SourceError {
+    fn from(e: E) -> SourceError {
+        SourceError{description: e.description().to_owned()}
+    }
+}
+
+pub fn open_file(filename: &str) -> Result<Source, SourceError> {
     let file = File::open(filename)?;
     let mut reader = csv::Reader::from_reader(file);
-    
-    let headers = reader.headers()
-        .unwrap()
+
+    let headers = reader.headers()?
         .iter()
         .map(|header| header.to_owned())
         .collect();
@@ -26,11 +38,12 @@ pub struct CsvSource {
 }
 
 impl Iterator for CsvSource {
-    type Item = Row;
+    type Item = Result<Row, SourceError>;
     fn next(&mut self) -> Option<Self::Item> {
         let record = match self.iter.next() {
             None => return None,
-            Some(rec) => rec.unwrap(),
+            Some(Err(e)) => return Some(Err(e.into())),
+            Some(Ok(rec)) => rec,
         };
 
         let mut row = Row::new();
@@ -39,6 +52,6 @@ impl Iterator for CsvSource {
             row.fields.insert(column, Data::String(field.to_owned()));
         }
 
-        Some(row)
+        Some(Ok(row))
     }
 }
