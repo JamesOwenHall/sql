@@ -1,4 +1,5 @@
 extern crate csv;
+extern crate serde_json;
 
 pub mod aggregate;
 pub mod answer;
