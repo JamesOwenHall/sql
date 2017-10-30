@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1000,
+        "name": "Alice",
+        "balance": 15.50,
+        "frozen": false,
+        "last_transaction_amount": -4.50
+    },
+    {
+        "id": 1001,
+        "name": "Bob",
+        "balance": -50.67,
+        "frozen": true,
+        "last_transaction_amount": -100.99
+    },
+    {
+        "id": 1002,
+        "name": "Charlie",
+        "balance": 0.00,
+        "frozen": false,
+        "last_transaction_amount": null
+    },
+    {
+        "id": 1003,
+        "name": "Denise",
+        "balance": -1024.64,
+        "frozen": true,
+        "last_transaction_amount": -1024.64
+    }
+]
