@@ -1,5 +1,5 @@
 use std::fmt;
-use data::Data;
+use data::{Data, Number};
 use expr::Expr;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -17,7 +17,7 @@ impl AggregateFunction {
 
     pub fn aggregate(&self) -> Aggregate {
         match self {
-            &AggregateFunction::Sum => Aggregate::Sum(0)
+            &AggregateFunction::Sum => Aggregate::Sum(Number::Int(0))
         }
     }
 }
@@ -32,20 +32,20 @@ impl fmt::Display for AggregateFunction {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Aggregate {
-    Sum(i64),
+    Sum(Number),
 }
 
 impl Aggregate {
     pub fn apply(&mut self, value: Data) {
         match (self, value) {
-            (&mut Aggregate::Sum(ref mut acc), Data::Int(i)) => *acc += i,
+            (&mut Aggregate::Sum(ref mut acc), Data::Number(ref n)) => *acc += n.clone(),
             _ => {},
         }
     }
 
     pub fn final_value(&self) -> Data {
         match self {
-            &Aggregate::Sum(acc) => Data::Int(acc),
+            &Aggregate::Sum(ref acc) => Data::Number(acc.clone()),
         }
     }
 }

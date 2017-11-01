@@ -1,61 +1,89 @@
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::mem::transmute;
+use std::ops::{Add, AddAssign};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Data {
     Null,
     Bool(bool),
-    Int(i64),
-    Float(Float),
+    Number(Number),
     String(String),
 }
 
-impl Ord for Data {
+#[derive(Clone, Debug, PartialOrd)]
+pub enum Number {
+    Int(i64),
+    Float(f64),
+}
+
+impl Number {
+    fn as_float(&self) -> f64 {
+        match self {
+            &Number::Int(i) => i as f64,
+            &Number::Float(f) => f,
+        }
+    }
+}
+
+impl PartialEq for Number {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (&Number::Int(i1), &Number::Int(i2)) => i1 == i2,
+            (a, b) => equal_floats(a.as_float(), b.as_float()),
+        }
+    }
+}
+
+impl Eq for Number {}
+impl Ord for Number {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (&Data::Null, &Data::Null) => Ordering::Equal,
-            (&Data::Null, _) => Ordering::Less,
-            (&Data::Bool(_), &Data::Null) => Ordering::Greater,
-            (&Data::Bool(ref b1), &Data::Bool(ref b2)) => b1.cmp(b2),
-            (&Data::Bool(_), _) => Ordering::Less,
-            (&Data::Int(_), &Data::Null) => Ordering::Greater,
-            (&Data::Int(_), &Data::Bool(_)) => Ordering::Greater,
-            (&Data::Int(ref i1), &Data::Int(ref i2)) => i1.cmp(i2),
-            (&Data::Int(ref i), &Data::Float(ref f)) => Float{val: (*i as f64)}.cmp(f),
-            (&Data::Int(_), _) => Ordering::Less,
-            (&Data::Float(_), &Data::Null) => Ordering::Greater,
-            (&Data::Float(_), &Data::Bool(_)) => Ordering::Greater,
-            (&Data::Float(ref f), &Data::Int(ref i)) => f.cmp(&Float{val: (*i as f64)}),
-            (&Data::Float(ref f1), &Data::Float(ref f2)) => f1.cmp(f2),
-            (&Data::Float(_), _) => Ordering::Less,
-            (&Data::String(ref s1), &Data::String(ref s2)) => s1.cmp(s2),
-            (&Data::String(_), _) => Ordering::Greater,
+            (&Number::Int(i1), &Number::Int(i2)) => i1.cmp(&i2),
+            (a, b) => cmp_floats(a.as_float(), b.as_float()),
         }
     }
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct Float {
-    pub val: f64
-}
-
-impl Hash for Float {
+impl Hash for Number {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let t: u64 = unsafe{ transmute(self.val) };
-        t.hash(state)
+        let val = match self {
+            &Number::Int(i) => i,
+            &Number::Float(f) => unsafe{ transmute(f) },
+        };
+        val.hash(state);
     }
 }
 
-impl Eq for Float {}
-impl Ord for Float {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if self.val == other.val || (self.val.is_nan() && other.val.is_nan()) {
-            Ordering::Equal
-        } else if self.val < other.val {
-            Ordering::Less
-        } else {
-            Ordering::Greater
+impl Add for Number {
+    type Output = Number;
+    fn add(self, rhs: Number) -> Self::Output {
+        match (self, rhs) {
+            (Number::Int(i1), Number::Int(i2)) => Number::Int(i1 + i2),
+            (a, b) => Number::Float(a.as_float() + b.as_float()),
         }
+    }
+}
+
+impl AddAssign for Number {
+    fn add_assign(&mut self, rhs: Number) {
+        match (self.clone(), rhs) {
+            (Number::Int(i1), Number::Int(i2)) => *self = Number::Int(i1 + i2),
+            (a, b) => *self = Number::Float(a.as_float() + b.as_float()),
+        }
+    }
+}
+
+fn equal_floats(left: f64, right: f64) -> bool {
+    left == right || (left.is_nan() && right.is_nan())
+}
+
+fn cmp_floats(left: f64, right: f64) -> Ordering {
+    if equal_floats(left, right) {
+        Ordering::Equal
+    } else if left < right {
+        Ordering::Less
+    } else {
+        Ordering::Greater
     }
 }

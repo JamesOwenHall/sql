@@ -50,15 +50,16 @@ impl Display for Expr {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use data::Number;
 
     #[test]
     fn eval_column() {
         let mut row = Row::new();
-        row.fields.insert(Expr::Column(String::from("a")), Data::Int(0));
-        row.fields.insert(Expr::Column(String::from("b")), Data::Int(1));
-        row.fields.insert(Expr::Column(String::from("c")), Data::Int(2));
+        row.fields.insert(Expr::Column(String::from("a")), Data::Number(Number::Int(0)));
+        row.fields.insert(Expr::Column(String::from("b")), Data::Number(Number::Int(1)));
+        row.fields.insert(Expr::Column(String::from("c")), Data::Number(Number::Int(2)));
 
         let expr = Expr::Column(String::from("b"));
-        assert_eq!(Data::Int(1), expr.eval(&row));
+        assert_eq!(Data::Number(Number::Int(1)), expr.eval(&row));
     }
 }

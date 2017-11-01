@@ -149,18 +149,18 @@ pub fn execute(query: Query, source: Source) -> Result<Answer, SourceError> {
 mod tests {
     use super::*;
     use aggregate::{AggregateCall, AggregateFunction};
-    use data::Data;
+    use data::{Data, Number};
     use expr::Expr;
     use row::make_rows;
 
     #[test]
     fn aggregate_query() {
         let source = make_rows(vec!["a"], vec![
-            vec![Data::Int(1)],
-            vec![Data::Int(2)],
-            vec![Data::Int(3)],
-            vec![Data::Int(4)],
-            vec![Data::Int(5)],
+            vec![Data::Number(Number::Int(1))],
+            vec![Data::Number(Number::Int(2))],
+            vec![Data::Number(Number::Int(3))],
+            vec![Data::Number(Number::Int(4))],
+            vec![Data::Number(Number::Int(5))],
         ]);
 
         let call = AggregateCall{
@@ -178,7 +178,7 @@ mod tests {
         let actual = execute(query, Box::new(source.into_iter())).unwrap();
         let expected = Answer {
             columns: vec![String::from(r#"sum("a")"#)],
-            rows: vec![vec![Data::Int(15)]],
+            rows: vec![vec![Data::Number(Number::Int(15))]],
         };
 
         assert_eq!(expected, actual);
@@ -187,11 +187,11 @@ mod tests {
     #[test]
     fn non_aggregate_query() {
         let source = make_rows(vec!["a"], vec![
-            vec![Data::Int(1)],
-            vec![Data::Int(2)],
-            vec![Data::Int(3)],
-            vec![Data::Int(4)],
-            vec![Data::Int(5)],
+            vec![Data::Number(Number::Int(1))],
+            vec![Data::Number(Number::Int(2))],
+            vec![Data::Number(Number::Int(3))],
+            vec![Data::Number(Number::Int(4))],
+            vec![Data::Number(Number::Int(5))],
         ]);
 
         let query = Query {
@@ -205,11 +205,11 @@ mod tests {
         let expected = Answer {
             columns: vec![String::from(r#""a""#)],
             rows: vec![
-                vec![Data::Int(1)],
-                vec![Data::Int(2)],
-                vec![Data::Int(3)],
-                vec![Data::Int(4)],
-                vec![Data::Int(5)],
+                vec![Data::Number(Number::Int(1))],
+                vec![Data::Number(Number::Int(2))],
+                vec![Data::Number(Number::Int(3))],
+                vec![Data::Number(Number::Int(4))],
+                vec![Data::Number(Number::Int(5))],
             ],
         };
 

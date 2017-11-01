@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::path::Path;
-use data::{Data, Float};
+use data::{Data, Number};
 use expr::Expr;
 use row::Row;
 use csv;
@@ -106,9 +106,9 @@ impl Iterator for JsonSource {
                     serde_json::Value::Bool(b) => Data::Bool(b),
                     serde_json::Value::Number(n) => {
                         if let Some(i) = n.as_i64() {
-                            Data::Int(i)
+                            Data::Number(Number::Int(i))
                         } else {
-                            Data::Float(Float{val: n.as_f64().unwrap()})
+                            Data::Number(Number::Float(n.as_f64().unwrap()))
                         }
                     },
                     serde_json::Value::String(s) => Data::String(s),
@@ -125,17 +125,16 @@ impl Iterator for JsonSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use data::Float;
     use row::make_rows;
 
     #[test]
     fn json_source() {
         let source = JsonSource::new("fixtures/accounts.json").unwrap();
         let expected = make_rows(vec!["id", "name", "balance", "frozen", "last_transaction_amount"], vec![
-            vec![Data::Int(1000), Data::String("Alice".into()), Data::Float(Float{val: 15.5}), Data::Bool(false), Data::Float(Float{val: -4.5})],
-            vec![Data::Int(1001), Data::String("Bob".into()), Data::Float(Float{val: -50.67}), Data::Bool(true), Data::Float(Float{val: -100.99})],
-            vec![Data::Int(1002), Data::String("Charlie".into()), Data::Float(Float{val: 0.0}), Data::Bool(false), Data::Null],
-            vec![Data::Int(1003), Data::String("Denise".into()), Data::Float(Float{val: -1024.64}), Data::Bool(true), Data::Float(Float{val: -1024.64})],
+            vec![Data::Number(Number::Int(1000)), Data::String("Alice".into()), Data::Number(Number::Float(15.5)), Data::Bool(false), Data::Number(Number::Float(-4.5))],
+            vec![Data::Number(Number::Int(1001)), Data::String("Bob".into()), Data::Number(Number::Float(-50.67)), Data::Bool(true), Data::Number(Number::Float(-100.99))],
+            vec![Data::Number(Number::Int(1002)), Data::String("Charlie".into()), Data::Number(Number::Float(0.0)), Data::Bool(false), Data::Null],
+            vec![Data::Number(Number::Int(1003)), Data::String("Denise".into()), Data::Number(Number::Float(-1024.64)), Data::Bool(true), Data::Number(Number::Float(-1024.64))],
         ]);
         let actual: Vec<Result<Row, SourceError>> = source.collect();
         assert_eq!(expected, actual);
