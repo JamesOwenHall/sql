@@ -149,19 +149,22 @@ pub fn execute(query: Query, source: Source) -> Result<Answer, SourceError> {
 mod tests {
     use super::*;
     use aggregate::{AggregateCall, AggregateFunction};
-    use data::{Data, Number};
+    use data::Data;
     use expr::Expr;
     use row::make_rows;
 
     #[test]
     fn aggregate_query() {
-        let source = make_rows(vec!["a"], vec![
-            vec![Data::Number(Number::Int(1))],
-            vec![Data::Number(Number::Int(2))],
-            vec![Data::Number(Number::Int(3))],
-            vec![Data::Number(Number::Int(4))],
-            vec![Data::Number(Number::Int(5))],
-        ]);
+        let source = make_rows(
+            vec!["a"],
+            vec![
+                row![1],
+                row![2],
+                row![3],
+                row![4],
+                row![5],
+            ],
+        );
 
         let call = AggregateCall{
             function: AggregateFunction::Sum,
@@ -178,7 +181,7 @@ mod tests {
         let actual = execute(query, Box::new(source.into_iter())).unwrap();
         let expected = Answer {
             columns: vec![String::from(r#"sum("a")"#)],
-            rows: vec![vec![Data::Number(Number::Int(15))]],
+            rows: vec![row![15]],
         };
 
         assert_eq!(expected, actual);
@@ -186,13 +189,16 @@ mod tests {
 
     #[test]
     fn non_aggregate_query() {
-        let source = make_rows(vec!["a"], vec![
-            vec![Data::Number(Number::Int(1))],
-            vec![Data::Number(Number::Int(2))],
-            vec![Data::Number(Number::Int(3))],
-            vec![Data::Number(Number::Int(4))],
-            vec![Data::Number(Number::Int(5))],
-        ]);
+        let source = make_rows(
+            vec!["a"],
+            vec![
+                row![1],
+                row![2],
+                row![3],
+                row![4],
+                row![5],
+            ],
+        );
 
         let query = Query {
             select: vec![Expr::Column(String::from("a"))],
@@ -205,11 +211,11 @@ mod tests {
         let expected = Answer {
             columns: vec![String::from(r#""a""#)],
             rows: vec![
-                vec![Data::Number(Number::Int(1))],
-                vec![Data::Number(Number::Int(2))],
-                vec![Data::Number(Number::Int(3))],
-                vec![Data::Number(Number::Int(4))],
-                vec![Data::Number(Number::Int(5))],
+                row![1],
+                row![2],
+                row![3],
+                row![4],
+                row![5],
             ],
         };
 

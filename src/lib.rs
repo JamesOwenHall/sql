@@ -1,6 +1,9 @@
 extern crate csv;
 extern crate serde_json;
 
+#[macro_use]
+pub mod row;
+
 pub mod aggregate;
 pub mod answer;
 pub mod data;
@@ -8,7 +11,6 @@ pub mod executor;
 pub mod expr;
 pub mod parser;
 pub mod query;
-pub mod row;
 pub mod scanner;
 pub mod source;
 

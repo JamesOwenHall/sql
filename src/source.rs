@@ -130,12 +130,15 @@ mod tests {
     #[test]
     fn json_source() {
         let source = JsonSource::new("fixtures/accounts.json").unwrap();
-        let expected = make_rows(vec!["id", "name", "balance", "frozen", "last_transaction_amount"], vec![
-            vec![Data::Number(Number::Int(1000)), Data::String("Alice".into()), Data::Number(Number::Float(15.5)), Data::Bool(false), Data::Number(Number::Float(-4.5))],
-            vec![Data::Number(Number::Int(1001)), Data::String("Bob".into()), Data::Number(Number::Float(-50.67)), Data::Bool(true), Data::Number(Number::Float(-100.99))],
-            vec![Data::Number(Number::Int(1002)), Data::String("Charlie".into()), Data::Number(Number::Float(0.0)), Data::Bool(false), Data::Null],
-            vec![Data::Number(Number::Int(1003)), Data::String("Denise".into()), Data::Number(Number::Float(-1024.64)), Data::Bool(true), Data::Number(Number::Float(-1024.64))],
-        ]);
+        let expected = make_rows(
+            vec!["id", "name", "balance", "frozen", "last_transaction_amount"],
+            vec![
+                row![1000, "Alice", 15.5, false, -4.5],
+                row![1001, "Bob", -50.67, true, -100.99],
+                row![1002, "Charlie", 0.0, false, Data::Null],
+                row![1003, "Denise", -1024.64, true, -1024.64],
+            ],
+        );
         let actual: Vec<Result<Row, SourceError>> = source.collect();
         assert_eq!(expected, actual);
     }

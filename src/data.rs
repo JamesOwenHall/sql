@@ -11,6 +11,36 @@ pub enum Data {
     String(String),
 }
 
+impl From<bool> for Data {
+    fn from(b: bool) -> Self {
+        Data::Bool(b)
+    }
+}
+
+impl From<isize> for Data {
+    fn from(i: isize) -> Self {
+        Data::Number(Number::Int(i as i64))
+    }
+}
+
+impl From<f64> for Data {
+    fn from(f: f64) -> Self {
+        Data::Number(Number::Float(f))
+    }
+}
+
+impl<'a> From<&'a str> for Data {
+    fn from(s: &str) -> Self {
+        Data::String(s.to_owned())
+    }
+}
+
+impl From<String> for Data {
+    fn from(s: String) -> Self {
+        Data::String(s)
+    }
+}
+
 #[derive(Clone, Debug, PartialOrd)]
 pub enum Number {
     Int(i64),

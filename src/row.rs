@@ -30,3 +30,8 @@ pub fn make_rows(columns: Vec<&'static str>, values: Vec<Vec<Data>>) -> Vec<Resu
 
     rows
 }
+
+#[macro_export]
+macro_rules! row {
+    ( $( $x:expr ),* ) => ( vec![ $( Data::from($x) ),* ] )
+}
