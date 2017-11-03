@@ -11,9 +11,9 @@ fn query_execution() {
     let input = make_rows(
         vec!["a", "b"],
         vec![
-            row![1, 2],
-            row![3, 4],
-            row![5, 6],
+            data_vec![1, 2],
+            data_vec![3, 4],
+            data_vec![5, 6],
         ],
     );
 
@@ -21,7 +21,7 @@ fn query_execution() {
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
         columns: vec![r#"sum("a")"#.to_string(), r#"sum("b")"#.to_string()],
-        rows: vec![row![9, 12]],
+        rows: vec![data_vec![9, 12]],
     };
 
     assert_eq!(expected, actual);
@@ -32,9 +32,9 @@ fn group_query_execution() {
     let input = make_rows(
         vec!["a", "b"],
         vec![
-            row![1, 0],
-            row![3, 1],
-            row![5, 1],
+            data_vec![1, 0],
+            data_vec![3, 1],
+            data_vec![5, 1],
         ],
     );
 
@@ -43,8 +43,8 @@ fn group_query_execution() {
     let expected = Answer {
         columns: vec![r#"sum("a")"#.to_string(), r#""b""#.to_string()],
         rows: vec![
-            row![1, 0],
-            row![8, 1],
+            data_vec![1, 0],
+            data_vec![8, 1],
         ],
     };
 
@@ -56,9 +56,9 @@ fn order_by_execution() {
     let input = make_rows(
         vec!["a"],
         vec![
-            row![3],
-            row![2],
-            row![1],
+            data_vec![3],
+            data_vec![2],
+            data_vec![1],
         ],
     );
 
@@ -67,9 +67,9 @@ fn order_by_execution() {
     let expected = Answer {
         columns: vec![r#""a""#.to_string()],
         rows: vec![
-            row![1],
-            row![2],
-            row![3],
+            data_vec![1],
+            data_vec![2],
+            data_vec![3],
         ],
     };
 

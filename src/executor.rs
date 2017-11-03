@@ -158,11 +158,11 @@ mod tests {
         let source = make_rows(
             vec!["a"],
             vec![
-                row![1],
-                row![2],
-                row![3],
-                row![4],
-                row![5],
+                data_vec![1],
+                data_vec![2],
+                data_vec![3],
+                data_vec![4],
+                data_vec![5],
             ],
         );
 
@@ -181,7 +181,7 @@ mod tests {
         let actual = execute(query, Box::new(source.into_iter())).unwrap();
         let expected = Answer {
             columns: vec![String::from(r#"sum("a")"#)],
-            rows: vec![row![15]],
+            rows: vec![data_vec![15]],
         };
 
         assert_eq!(expected, actual);
@@ -192,11 +192,11 @@ mod tests {
         let source = make_rows(
             vec!["a"],
             vec![
-                row![1],
-                row![2],
-                row![3],
-                row![4],
-                row![5],
+                data_vec![1],
+                data_vec![2],
+                data_vec![3],
+                data_vec![4],
+                data_vec![5],
             ],
         );
 
@@ -211,11 +211,11 @@ mod tests {
         let expected = Answer {
             columns: vec![String::from(r#""a""#)],
             rows: vec![
-                row![1],
-                row![2],
-                row![3],
-                row![4],
-                row![5],
+                data_vec![1],
+                data_vec![2],
+                data_vec![3],
+                data_vec![4],
+                data_vec![5],
             ],
         };
 
