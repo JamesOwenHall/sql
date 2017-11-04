@@ -11,7 +11,7 @@ pub type Source = Box<Iterator<Item=Result<Row, SourceError>>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceError {
-    description: String
+    pub description: String
 }
 
 impl<E: Error> From<E> for SourceError {

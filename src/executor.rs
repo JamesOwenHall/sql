@@ -7,6 +7,18 @@ use query::Query;
 use row::Row;
 use source::{Source, SourceError};
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ExecuteError {
+    SourceError(String),
+    InvalidOrderClause(Expr),
+}
+
+impl From<SourceError> for ExecuteError {
+    fn from(e: SourceError) -> Self {
+        ExecuteError::SourceError(e.description)
+    }
+}
+
 struct Executor {
     query: Query,
     aggregate_calls: Vec<AggregateCall>,
@@ -14,31 +26,29 @@ struct Executor {
 }
 
 impl Executor {
-    fn new(query: Query) -> Self {
-        let mut aggregates = Vec::new();
-        for expr in query.select.iter() {
-            if let Some(call) = expr.get_aggregate_call() {
-                aggregates.push(call);
-            }
-        }
+    fn new(query: Query) -> Result<Self, ExecuteError> {
+        let aggregates = query.select.iter()
+            .filter_map(|expr| expr.get_aggregate_call())
+            .collect();
 
         let mut order_indices = Vec::new();
         for expr in query.order.iter() {
-            for (index, select) in query.select.iter().enumerate() {
-                if select == expr {
-                    order_indices.push(index);
-                }
-            }
+            let position = query.select.iter().position(|select| select == expr);
+            let index = match position {
+                Some(i) => i,
+                None => return Err(ExecuteError::InvalidOrderClause(expr.clone())),
+            };
+            order_indices.push(index);
         }
 
-        Executor {
+        Ok(Executor {
             query: query,
             aggregate_calls: aggregates,
             order_indices: order_indices,
-        }
+        })
     }
 
-    fn execute(&self, source: Source) -> Result<Answer, SourceError> {
+    fn execute(&self, source: Source) -> Result<Answer, ExecuteError> {
         let mut answer = if self.aggregate_calls.is_empty() {
             self.execute_non_aggregate(source)?
         } else {
@@ -141,8 +151,8 @@ impl Executor {
     }
 }
 
-pub fn execute(query: Query, source: Source) -> Result<Answer, SourceError> {
-    Executor::new(query).execute(source)
+pub fn execute(query: Query, source: Source) -> Result<Answer, ExecuteError> {
+    Executor::new(query)?.execute(source)
 }
 
 #[cfg(test)]
@@ -219,6 +229,24 @@ mod tests {
             ],
         };
 
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn invalid_order_clause() {
+        let source = make_rows(
+            vec!["a"],
+            vec![],
+        );
+
+        let query = Query {
+            select: vec![],
+            from: String::new(),
+            group: vec![],
+            order: vec![Expr::Column(String::from("a"))],
+        };
+        let actual = execute(query, Box::new(source.clone().into_iter()));
+        let expected = Err(ExecuteError::InvalidOrderClause(Expr::Column(String::from("a"))));
         assert_eq!(expected, actual);
     }
 }
