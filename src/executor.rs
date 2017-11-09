@@ -55,7 +55,7 @@ impl Executor {
             self.execute_aggregate(source)?
         };
 
-        self.sort_answer(&mut answer);
+        answer.sort(&self.order_indices);
         Ok(answer)
     }
 
@@ -112,18 +112,6 @@ impl Executor {
             columns: self.get_columns(),
             rows: rows,
         })
-    }
-
-    fn sort_answer(&self, answer: &mut Answer) {
-        if !self.order_indices.is_empty() {
-            answer.rows.sort_unstable_by_key(|row| {
-                let mut sort_keys = Vec::with_capacity(self.order_indices.len());
-                for index in self.order_indices.iter() {
-                    sort_keys.push(row[*index].clone());
-                }
-                sort_keys
-            });
-        }
     }
 
     fn get_columns(&self) -> Vec<String> {
