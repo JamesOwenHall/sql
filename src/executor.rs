@@ -81,9 +81,8 @@ impl Executor {
 
         for row in source {
             let row = row?;
-            let group = self.get_group(&row);
             let group_aggregates = groups
-                .entry(group.clone())
+                .entry(self.get_group(&row))
                 .or_insert_with(|| self.make_aggregates());
 
             for (call, aggregate) in group_aggregates.iter_mut() {
