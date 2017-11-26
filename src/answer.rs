@@ -10,10 +10,6 @@ pub struct Answer {
 
 impl Answer {
     pub fn sort(&mut self, column_indices: &[(usize, SortDirection)]) {
-        if column_indices.is_empty() {
-            return;
-        }
-
         for &(index, ref direction) in column_indices.iter().rev() {
             match direction {
                 &SortDirection::Asc => self.rows.sort_by(|a, b| a[index].cmp(&b[index])),
