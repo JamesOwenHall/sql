@@ -84,7 +84,7 @@ fn order_by_asc() {
             data_vec![3],
             data_vec![2],
             data_vec![1],
-        ]
+        ],
     );
 
     let query = sql::parse("select a from bar order by a asc").unwrap();
@@ -109,7 +109,7 @@ fn order_by_desc() {
             data_vec![3],
             data_vec![2],
             data_vec![1],
-        ]
+        ],
     );
 
     let query = sql::parse("select a from bar order by a desc").unwrap();
@@ -120,6 +120,31 @@ fn order_by_desc() {
             data_vec![3],
             data_vec![2],
             data_vec![1],
+        ],
+    };
+
+    assert_eq!(expected, actual);
+}
+
+#[test]
+fn order_by_multiple_fields() {
+    let input = make_rows(
+        vec!["a", "b"],
+        vec![
+            data_vec![2, 6],
+            data_vec![2, 5],
+            data_vec![1, 5],
+        ],
+    );
+
+    let query = sql::parse("select a, b from bar order by a asc, b desc").unwrap();
+    let actual = execute(query, Box::new(input.into_iter())).unwrap();
+    let expected = Answer {
+        columns: vec![r#""a""#.to_string(), r#""b""#.to_string()],
+        rows: vec![
+            data_vec![1, 5],
+            data_vec![2, 6],
+            data_vec![2, 5],
         ],
     };
 
