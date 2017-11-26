@@ -1,5 +1,6 @@
 use std::fmt;
 use data::Data;
+use query::SortDirection;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Answer {
@@ -8,18 +9,17 @@ pub struct Answer {
 }
 
 impl Answer {
-    pub fn sort(&mut self, column_indices: &[usize]) {
+    pub fn sort(&mut self, column_indices: &[(usize, SortDirection)]) {
         if column_indices.is_empty() {
             return;
         }
 
-        self.rows.sort_unstable_by_key(|row| {
-            let mut sort_keys = Vec::with_capacity(column_indices.len());
-            for index in column_indices.iter() {
-                sort_keys.push(row[*index].clone());
+        for &(index, ref direction) in column_indices.iter().rev() {
+            match direction {
+                &SortDirection::Asc => self.rows.sort_by(|a, b| a[index].cmp(&b[index])),
+                &SortDirection::Desc => self.rows.sort_by(|a, b| b[index].cmp(&a[index])),
             }
-            sort_keys
-        });
+        }
     }
 }
 

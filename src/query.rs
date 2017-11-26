@@ -6,7 +6,7 @@ pub struct Query {
     pub select: Vec<Expr>,
     pub from: String,
     pub group: Vec<Expr>,
-    pub order: Vec<Expr>,
+    pub order: Vec<OrderField>,
 }
 
 impl fmt::Display for Query {
@@ -31,5 +31,38 @@ impl fmt::Display for Query {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct OrderField {
+    pub expr: Expr,
+    pub direction: Option<SortDirection>,
+}
+
+impl fmt::Display for OrderField {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.expr)?;
+
+        if let Some(ref direction) = self.direction {
+            write!(f, " {}", direction)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SortDirection {
+    Asc,
+    Desc,
+}
+
+impl fmt::Display for SortDirection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &SortDirection::Asc => write!(f, "asc"),
+            &SortDirection::Desc => write!(f, "desc"),
+        }
     }
 }

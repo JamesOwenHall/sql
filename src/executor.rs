@@ -3,7 +3,7 @@ use aggregate::{Aggregate, AggregateCall};
 use answer::Answer;
 use data::Data;
 use expr::Expr;
-use query::Query;
+use query::{Query, SortDirection};
 use row::Row;
 use source::{Source, SourceError};
 
@@ -22,7 +22,7 @@ impl From<SourceError> for ExecuteError {
 struct Executor {
     query: Query,
     aggregate_calls: Vec<AggregateCall>,
-    order_indices: Vec<usize>,
+    order_indices: Vec<(usize, SortDirection)>,
 }
 
 impl Executor {
@@ -32,13 +32,14 @@ impl Executor {
             .collect();
 
         let mut order_indices = Vec::new();
-        for expr in query.order.iter() {
-            let position = query.select.iter().position(|select| select == expr);
+        for sort_field in query.order.iter() {
+            let position = query.select.iter().position(|select| select == &sort_field.expr);
             let index = match position {
                 Some(i) => i,
-                None => return Err(ExecuteError::InvalidOrderClause(expr.clone())),
+                None => return Err(ExecuteError::InvalidOrderClause(sort_field.expr.clone())),
             };
-            order_indices.push(index);
+            let direction = sort_field.direction.clone().unwrap_or(SortDirection::Asc);
+            order_indices.push((index, direction));
         }
 
         Ok(Executor {
@@ -148,6 +149,7 @@ mod tests {
     use aggregate::{AggregateCall, AggregateFunction};
     use data::Data;
     use expr::Expr;
+    use query::OrderField;
     use row::make_rows;
 
     #[test]
@@ -230,7 +232,10 @@ mod tests {
             select: vec![],
             from: String::new(),
             group: vec![],
-            order: vec![Expr::Column(String::from("a"))],
+            order: vec![OrderField {
+                expr: Expr::Column(String::from("a")),
+                direction: None,
+            }],
         };
         let actual = execute(query, Box::new(source.clone().into_iter()));
         let expected = Err(ExecuteError::InvalidOrderClause(Expr::Column(String::from("a"))));

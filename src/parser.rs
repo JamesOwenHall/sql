@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use aggregate::{AggregateCall, AggregateFunction};
 use expr::Expr;
-use query::Query;
+use query::{OrderField, Query, SortDirection};
 use scanner::{Scanner, Token};
 
 #[derive(Clone, Debug)]
@@ -31,7 +31,7 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Result<Query> {
         self.expect(Token::Select)?;
         let select = self.parse_select()?;
-        
+
         self.expect(Token::From)?;
         let from = match self.scanner.next() {
             Some(Ok(Token::Identifier(i))) => i,
@@ -101,22 +101,44 @@ impl<'a> Parser<'a> {
     fn parse_group_by(&mut self) -> Result<Vec<Expr>> {
         self.expect(Token::Group)?;
         self.expect(Token::By)?;
-        self.parse_comma_separated_exprs()
-    }
 
-    fn parse_order_by(&mut self) -> Result<Vec<Expr>> {
-        self.expect(Token::Order)?;
-        self.expect(Token::By)?;
-        self.parse_comma_separated_exprs()
-    }
-
-    fn parse_comma_separated_exprs(&mut self) -> Result<Vec<Expr>> {
         let mut exprs = Vec::new();
         loop {
             exprs.push(self.parse_expr()?);
             match self.scanner.peek().cloned() {
                 Some(Ok(Token::Comma)) => self.scanner.next(),
                 _ => return Ok(exprs),
+            };
+        }
+    }
+
+    fn parse_order_by(&mut self) -> Result<Vec<OrderField>> {
+        self.expect(Token::Order)?;
+        self.expect(Token::By)?;
+
+        let mut fields = Vec::new();
+        loop {
+            let expr = self.parse_expr()?;
+            let direction = match self.scanner.peek().cloned() {
+                Some(Ok(Token::Asc)) => {
+                    self.scanner.next();
+                    Some(SortDirection::Asc)
+                },
+                Some(Ok(Token::Desc)) => {
+                    self.scanner.next();
+                    Some(SortDirection::Desc)
+                },
+                _ => None,
+            };
+
+            fields.push(OrderField {
+                expr: expr,
+                direction: direction,
+            });
+
+            match self.scanner.peek().cloned() {
+                Some(Ok(Token::Comma)) => self.scanner.next(),
+                _ => return Ok(fields),
             };
         }
     }
@@ -143,14 +165,32 @@ mod tests {
 
     #[test]
     fn parse_group_query() {
-        let input = "select sum(a), b from foo group by b";
-        parse(input).unwrap();
+        let inputs = vec![
+            "select a, b from foo group by a",
+            "select a, b from foo group by b",
+            "select a, b from foo group by a, b",
+        ];
+
+        for input in inputs {
+            parse(input).unwrap();
+        }
     }
 
     #[test]
     fn parse_order_query() {
-        let input = "select sum(a), b from foo order by b";
-        parse(input).unwrap();
+        let inputs = vec![
+            "select a, b from foo order by b",
+            "select a, b from foo order by b asc",
+            "select a, b from foo order by b desc",
+            "select a, b from foo order by b, a",
+            "select a, b from foo order by b asc, a",
+            "select a, b from foo order by b, a desc",
+            "select a, b from foo order by b asc, a desc",
+        ];
+
+        for input in inputs {
+            parse(input).unwrap();
+        }
     }
 
     #[test]
