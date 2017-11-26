@@ -1,3 +1,4 @@
+use std::fmt;
 use data::Data;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -19,5 +20,21 @@ impl Answer {
             }
             sort_keys
         });
+    }
+}
+
+impl fmt::Display for Answer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", self.columns.join("\t"))?;
+
+        for row in self.rows.iter() {
+            let formatted_cells = row.iter()
+                .map(|cell| format!("{}", cell))
+                .collect::<Vec<String>>();
+            
+            writeln!(f, "{}", formatted_cells.join("\t"))?;
+        }
+
+        Ok(())
     }
 }

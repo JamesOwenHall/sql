@@ -15,6 +15,9 @@ fn main() {
     let query_str = matches.value_of("QUERY").unwrap();
     let query = sql::parse(query_str).unwrap();
     let source = sql::open_file(&query.from).unwrap();
-    let answer = sql::execute(query, source);
-    println!("{:?}", answer);
+    
+    match sql::execute(query, source) {
+        Ok(answer) => println!("{}", answer),
+        Err(e) => eprintln!("{:?}", e),
+    }
 }

@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::mem::transmute;
 use std::ops::{Add, AddAssign};
@@ -9,6 +10,17 @@ pub enum Data {
     Bool(bool),
     Number(Number),
     String(String),
+}
+
+impl fmt::Display for Data {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Data::Null => write!(f, "<null>"),
+            &Data::Bool(b) => write!(f, "{}", b),
+            &Data::Number(ref n) => write!(f, "{}", n),
+            &Data::String(ref s) => write!(f, "{}", s),
+        }
+    }
 }
 
 impl From<bool> for Data {
@@ -52,6 +64,15 @@ impl Number {
         match self {
             &Number::Int(i) => i as f64,
             &Number::Float(f) => f,
+        }
+    }
+}
+
+impl fmt::Display for Number {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Number::Int(i) => write!(f, "{}", i),
+            &Number::Float(n) => write!(f, "{}", n),
         }
     }
 }
