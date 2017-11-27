@@ -44,3 +44,14 @@ sql 'select sum(balance) from "fixtures/accounts.json"'
 sum("balance")
 -1059.8100000000002
 ```
+
+##### Filter rows
+
+```sh
+sql 'select sum(balance) from "fixtures/accounts.json" where frozen'
+```
+
+```
+sum("balance")
+-1075.3100000000002
+```

@@ -40,6 +40,14 @@ impl<'a> Parser<'a> {
             None => return Err(ParseError::UnexpectedEOF),
         };
 
+        let condition = match self.scanner.peek().cloned() {
+            Some(Ok(Token::Where)) => {
+                self.scanner.next();
+                Some(self.parse_expr()?)
+            },
+            _ => None,
+        };
+
         let group = match self.scanner.peek().cloned() {
             Some(Ok(Token::Group)) => self.parse_group_by()?,
             _ => vec![],
@@ -53,6 +61,7 @@ impl<'a> Parser<'a> {
         Ok(Query {
             select: select,
             from: from,
+            condition: condition,
             group: group,
             order: order,
         })
@@ -161,6 +170,18 @@ mod tests {
     fn parse_aggregate_query() {
         let input = "select sum(value) from foo";
         parse(input).unwrap();
+    }
+
+    #[test]
+    fn parse_condition() {
+        let inputs = vec![
+            "select a from foo where a",
+            "select a from foo where a == b",
+        ];
+
+        for input in inputs {
+            parse(input).unwrap();
+        }
     }
 
     #[test]

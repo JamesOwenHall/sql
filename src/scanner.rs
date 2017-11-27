@@ -6,6 +6,7 @@ use parser::ParseError;
 pub enum Token {
     Select,
     From,
+    Where,
     Group,
     Order,
     By,
@@ -16,6 +17,7 @@ pub enum Token {
     OpenParen,
     CloseParen,
     Comma,
+    Eq,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -64,6 +66,10 @@ impl<'a> Iterator for Scanner<'a> {
                 self.input.next();
                 Ok(Token::Comma)
             },
+            '=' => {
+                self.input.next();
+                Ok(Token::Eq)
+            },
             '\'' => self.read_string(),
             '"' => self.read_quoted_identifier(),
             c if Self::is_letter(c) => Ok(self.read_identifier()),
@@ -103,6 +109,7 @@ impl<'a> Scanner<'a> {
         match buf.to_lowercase().as_ref() {
             "select" => Token::Select,
             "from" => Token::From,
+            "where" => Token::Where,
             "group" => Token::Group,
             "order" => Token::Order,
             "by" => Token::By,
@@ -159,19 +166,21 @@ mod tests {
 
     #[test]
     fn symbols() {
-        let mut scanner = Scanner::new("(,)");
+        let mut scanner = Scanner::new("(,)=");
         assert_eq!(scanner.next(), Some(Ok(Token::OpenParen)));
         assert_eq!(scanner.next(), Some(Ok(Token::Comma)));
         assert_eq!(scanner.next(), Some(Ok(Token::CloseParen)));
+        assert_eq!(scanner.next(), Some(Ok(Token::Eq)));
         assert_eq!(scanner.next(), None);
     }
 
     #[test]
     fn identifiers() {
-        let mut scanner = Scanner::new(r#"select FrOm foo group order by asc desc "a field""#);
+        let mut scanner = Scanner::new(r#"select FrOm foo where group order by asc desc "a field""#);
         assert_eq!(scanner.next(), Some(Ok(Token::Select)));
         assert_eq!(scanner.next(), Some(Ok(Token::From)));
         assert_eq!(scanner.next(), Some(Ok(Token::Identifier(("foo".to_string())))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Where)));
         assert_eq!(scanner.next(), Some(Ok(Token::Group)));
         assert_eq!(scanner.next(), Some(Ok(Token::Order)));
         assert_eq!(scanner.next(), Some(Ok(Token::By)));

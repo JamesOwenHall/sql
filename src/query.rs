@@ -5,6 +5,7 @@ use expr::Expr;
 pub struct Query {
     pub select: Vec<Expr>,
     pub from: String,
+    pub condition: Option<Expr>,
     pub group: Vec<Expr>,
     pub order: Vec<OrderField>,
 }
@@ -15,6 +16,10 @@ impl fmt::Display for Query {
             .map(|expr| format!("{}", expr))
             .collect();
         write!(f, r#"select {} from "{}""#, select.join(", "), self.from)?;
+
+        if let Some(ref condition) = self.condition {
+            write!(f, " where {}", condition)?;
+        }
 
         if !self.group.is_empty() {
             let group: Vec<String> = self.group.iter()

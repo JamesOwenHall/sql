@@ -28,6 +28,27 @@ fn query_execution() {
 }
 
 #[test]
+fn filter_where_clause() {
+    let input = make_rows(
+        vec!["a", "b"],
+        vec![
+            data_vec![1, true],
+            data_vec![2, false],
+            data_vec![3, true],
+        ],
+    );
+
+    let query = sql::parse("select sum(a) from bar where b").unwrap();
+    let actual = execute(query, Box::new(input.into_iter())).unwrap();
+    let expected = Answer {
+        columns: vec![r#"sum("a")"#.to_string()],
+        rows: vec![data_vec![4]],
+    };
+
+    assert_eq!(expected, actual);
+}
+
+#[test]
 fn group_query_execution() {
     let input = make_rows(
         vec!["a", "b"],
