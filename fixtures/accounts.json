@@ -9,7 +9,7 @@
     {
         "id": 1001,
         "name": "Bob",
-        "balance": -50.67,
+        "balance": -50.08,
         "frozen": true,
         "last_transaction_amount": -100.99
     },

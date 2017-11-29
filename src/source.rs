@@ -134,7 +134,7 @@ mod tests {
             vec!["id", "name", "balance", "frozen", "last_transaction_amount"],
             vec![
                 data_vec![1000, "Alice", 15.5, false, -4.5],
-                data_vec![1001, "Bob", -50.67, true, -100.99],
+                data_vec![1001, "Bob", -50.08, true, -100.99],
                 data_vec![1002, "Charlie", 0.0, false, Data::Null],
                 data_vec![1003, "Denise", -1024.64, true, -1024.64],
             ],
