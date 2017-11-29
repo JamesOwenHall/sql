@@ -73,10 +73,10 @@ impl Executor {
         let mut rows = Vec::new();
         for input_row in source {
             let input_row = input_row?;
-            let mut row = Vec::new();
-            for field in self.query.select.iter() {
-                row.push(field.eval(&input_row));
-            }
+
+            let row = self.query.select.iter()
+                .map(|field| field.eval(&input_row))
+                .collect();
             rows.push(row);
         }
 
@@ -110,10 +110,9 @@ impl Executor {
                 row.fields.insert(self.query.group[index].clone(), val.clone());
             }
 
-            let mut output_row = Vec::new();
-            for field in self.query.select.iter() {
-                output_row.push(field.eval(&row));
-            }
+            let output_row = self.query.select.iter()
+                .map(|field| field.eval(&row))
+                .collect();
             rows.push(output_row);
         }
 
@@ -124,19 +123,15 @@ impl Executor {
     }
 
     fn get_columns(&self) -> Vec<String> {
-        let mut columns = Vec::new();
-        for field in self.query.select.iter() {
-            columns.push(format!("{}", field));
-        }
-        columns
+        self.query.select.iter()
+            .map(|field| format!("{}", field))
+            .collect()
     }
 
     fn get_group(&self, row: &Row) -> Vec<Data> {
-        let mut group = Vec::new();
-        for field in self.query.group.iter() {
-            group.push(field.eval(row));
-        }
-        group
+        self.query.group.iter()
+            .map(|field| field.eval(row))
+            .collect()
     }
 
     fn make_aggregates(&self) -> HashMap<AggregateCall, Aggregate> {
