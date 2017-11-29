@@ -7,11 +7,11 @@ use row::Row;
 use csv;
 use serde_json;
 
-pub type Source = Box<Iterator<Item=Result<Row, SourceError>>>;
+pub type Source = Box<Iterator<Item = Result<Row, SourceError>>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceError {
-    pub description: String
+    pub description: String,
 }
 
 impl<E: Error> From<E> for SourceError {
@@ -44,7 +44,7 @@ impl CsvSource {
             .iter()
             .map(|header| header.to_owned())
             .collect();
-        
+
         let records = reader.into_records();
         let source = CsvSource{headers: headers, iter: records};
         Ok(Box::new(source))
@@ -128,8 +128,25 @@ mod tests {
     use row::make_rows;
 
     #[test]
+    fn csv_source() {
+        let source = open_file("fixtures/accounts.csv").unwrap();
+        let expected =
+            make_rows(
+                vec!["id", "name", "balance", "frozen", "last_transaction_amount"],
+                vec![
+                    data_vec!["1000", "Alice", "15.50", "false", "-4.50"],
+                    data_vec!["1001", "Bob", "-50.08", "true", "-100.99"],
+                    data_vec!["1002", "Charlie", "0.00", "false", ""],
+                    data_vec!["1003", "Denise", "-1024.64", "true", "-1024.64"],
+                ],
+            );
+        let actual: Vec<Result<Row, SourceError>> = source.collect();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
     fn json_source() {
-        let source = JsonSource::new("fixtures/accounts.json").unwrap();
+        let source = open_file("fixtures/accounts.json").unwrap();
         let expected = make_rows(
             vec!["id", "name", "balance", "frozen", "last_transaction_amount"],
             vec![

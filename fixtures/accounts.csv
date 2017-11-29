@@ -1,0 +1,5 @@
+id,name,balance,frozen,last_transaction_amount
+1000,Alice,15.50,false,-4.50
+1001,Bob,-50.08,true,-100.99
+1002,Charlie,0.00,false,
+1003,Denise,-1024.64,true,-1024.64
