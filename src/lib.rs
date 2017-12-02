@@ -1,6 +1,3 @@
-extern crate csv;
-extern crate serde_json;
-
 #[macro_use]
 pub mod row;
 
