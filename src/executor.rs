@@ -49,16 +49,7 @@ impl Executor {
         })
     }
 
-    fn execute(&self, mut source: Source) -> Result<Answer, ExecuteError> {
-        if let Some(condition) = self.query.condition.clone() {
-            source = Box::new(source.filter(move |row| {
-                match row {
-                    &Ok(ref row) => condition.eval(row) == Data::Bool(true),
-                    &Err(_) => true,
-                }
-            }));
-        }
-
+    fn execute(&self, source: Source) -> Result<Answer, ExecuteError> {
         let mut answer = if self.aggregate_calls.is_empty() {
             self.execute_non_aggregate(source)?
         } else {
