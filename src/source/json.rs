@@ -1,58 +1,58 @@
 extern crate serde_json;
 
+use std::collections::HashMap;
 use std::fs::File;
+use std::io::{BufRead, BufReader, Lines};
 use data::{Data, Number};
 use expr::Expr;
 use row::Row;
 use source::{Source, SourceError};
 
 pub struct JsonSource {
-    values: ::std::vec::IntoIter<serde_json::Value>,
+    lines: Lines<BufReader<File>>,
 }
 
 impl JsonSource {
     pub fn new(filename: &str) -> Result<Source, SourceError> {
         let file = File::open(filename)?;
-        let data: serde_json::Value = serde_json::from_reader(file)?;
-        let rows = match data {
-            serde_json::Value::Array(a) => a,
-            _ => return Err(SourceError { description: "invalid JSON".to_owned() }),
-        };
-
-        Ok(Box::new(JsonSource { values: rows.into_iter() }))
+        let reader = BufReader::new(file);
+        Ok(Box::new(JsonSource { lines: reader.lines() }))
     }
 }
 
 impl Iterator for JsonSource {
     type Item = Result<Row, SourceError>;
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let map = match self.values.next() {
-                None => return None,
-                Some(serde_json::Value::Object(m)) => m,
-                Some(_) => continue,
+        let line = match self.lines.next() {
+            None => return None,
+            Some(Err(e)) => return Some(Err(e.into())),
+            Some(Ok(l)) => l,
+        };
+
+        let map: HashMap<String, serde_json::Value> = match serde_json::from_str(&line) {
+            Ok(map) => map,
+            Err(e) => return Some(Err(e.into())),
+        };
+
+        let mut row = Row::new();
+        for (key, value) in map {
+            let val = match value {
+                serde_json::Value::Null => Data::Null,
+                serde_json::Value::Bool(b) => Data::Bool(b),
+                serde_json::Value::Number(n) => {
+                    if let Some(i) = n.as_i64() {
+                        Data::Number(Number::Int(i))
+                    } else {
+                        Data::Number(Number::Float(n.as_f64().unwrap()))
+                    }
+                }
+                serde_json::Value::String(s) => Data::String(s),
+                _ => continue,
             };
 
-            let mut row = Row::new();
-            for (key, value) in map {
-                let val = match value {
-                    serde_json::Value::Null => Data::Null,
-                    serde_json::Value::Bool(b) => Data::Bool(b),
-                    serde_json::Value::Number(n) => {
-                        if let Some(i) = n.as_i64() {
-                            Data::Number(Number::Int(i))
-                        } else {
-                            Data::Number(Number::Float(n.as_f64().unwrap()))
-                        }
-                    }
-                    serde_json::Value::String(s) => Data::String(s),
-                    _ => continue,
-                };
-
-                row.fields.insert(Expr::Column(key), val);
-            }
-            return Some(Ok(row));
+            row.fields.insert(Expr::Column(key), val);
         }
+        return Some(Ok(row));
     }
 }
 

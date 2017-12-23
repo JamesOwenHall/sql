@@ -55,3 +55,8 @@ sql 'select sum(balance) from "fixtures/accounts.json" where frozen'
 sum("balance")
 -1074.72
 ```
+
+### Supported formats
+
+- CSV
+- JSON (line-separated objects only)
