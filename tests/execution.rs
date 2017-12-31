@@ -20,7 +20,7 @@ fn query_execution() {
     let query = sql::parse("select sum(a), sum(b) from bar").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#"sum("a")"#.to_string(), r#"sum("b")"#.to_string()],
+        columns: vec!["sum(a)".to_string(), "sum(b)".to_string()],
         rows: vec![data_vec![9, 12]],
     };
 
@@ -41,7 +41,7 @@ fn filter_where_clause() {
     let query = sql::parse("select sum(a) from bar where b").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#"sum("a")"#.to_string()],
+        columns: vec!["sum(a)".to_string()],
         rows: vec![data_vec![4]],
     };
 
@@ -62,7 +62,7 @@ fn group_query_execution() {
     let query = sql::parse("select sum(a), b from bar group by b order by sum(a)").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#"sum("a")"#.to_string(), r#""b""#.to_string()],
+        columns: vec!["sum(a)".to_string(), "b".to_string()],
         rows: vec![
             data_vec![1, 0],
             data_vec![8, 1],
@@ -86,7 +86,7 @@ fn order_by_default_direction() {
     let query = sql::parse("select a from bar order by a").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#""a""#.to_string()],
+        columns: vec!["a".to_string()],
         rows: vec![
             data_vec![1],
             data_vec![2],
@@ -111,7 +111,7 @@ fn order_by_asc() {
     let query = sql::parse("select a from bar order by a asc").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#""a""#.to_string()],
+        columns: vec!["a".to_string()],
         rows: vec![
             data_vec![1],
             data_vec![2],
@@ -136,7 +136,7 @@ fn order_by_desc() {
     let query = sql::parse("select a from bar order by a desc").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#""a""#.to_string()],
+        columns: vec!["a".to_string()],
         rows: vec![
             data_vec![3],
             data_vec![2],
@@ -161,7 +161,7 @@ fn order_by_multiple_fields() {
     let query = sql::parse("select a, b from bar order by a asc, b desc").unwrap();
     let actual = execute(query, Box::new(input.into_iter())).unwrap();
     let expected = Answer {
-        columns: vec![r#""a""#.to_string(), r#""b""#.to_string()],
+        columns: vec!["a".to_string(), "b".to_string()],
         rows: vec![
             data_vec![1, 5],
             data_vec![2, 6],

@@ -202,7 +202,7 @@ mod tests {
 
         let actual = execute(query, Box::new(source.into_iter())).unwrap();
         let expected = Answer {
-            columns: vec![String::from(r#"sum("a")"#)],
+            columns: vec![String::from("sum(a)")],
             rows: vec![data_vec![15]],
         };
 
@@ -232,7 +232,7 @@ mod tests {
 
         let actual = execute(query, Box::new(source.clone().into_iter())).unwrap();
         let expected = Answer {
-            columns: vec![String::from(r#""a""#)],
+            columns: vec![String::from("a")],
             rows: vec![
                 data_vec![1],
                 data_vec![2],

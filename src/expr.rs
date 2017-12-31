@@ -2,6 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use aggregate::AggregateCall;
 use data::Data;
 use row::Row;
+use scanner::Token;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expr {
@@ -51,7 +52,7 @@ impl Expr {
 impl Display for Expr {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            &Expr::Column(ref name) => write!(f, r#""{}""#, name),
+            &Expr::Column(ref name) => Token::Identifier(name.clone()).fmt(f),
             &Expr::AggregateCall(ref call) => write!(f, "{}({})", call.function, call.argument),
             &Expr::BinaryExpr{ref left, ref op, ref right} => write!(f, "{} {} {}", left, op, right),
         }

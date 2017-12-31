@@ -1,5 +1,6 @@
 use std::fmt;
 use expr::Expr;
+use scanner::Token;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Query {
@@ -15,24 +16,26 @@ impl fmt::Display for Query {
         let select: Vec<String> = self.select.iter()
             .map(|expr| format!("{}", expr))
             .collect();
-        write!(f, r#"select {} from "{}""#, select.join(", "), self.from)?;
+        write!(f, "{} {}", Token::Select, select.join(", "))?;
+
+        write!(f, " {} {}", Token::From, Token::Identifier(self.from.clone()))?;
 
         if let Some(ref condition) = self.condition {
-            write!(f, " where {}", condition)?;
+            write!(f, " {} {}", Token::Where, condition)?;
         }
 
         if !self.group.is_empty() {
             let group: Vec<String> = self.group.iter()
                 .map(|expr| format!("{}", expr))
                 .collect();
-            write!(f, " group by {}", group.join(", "))?;
+            write!(f, " {} {} {}", Token::Group, Token::By, group.join(", "))?;
         }
 
         if !self.order.is_empty() {
             let order: Vec<String> = self.order.iter()
                 .map(|expr| format!("{}", expr))
                 .collect();
-            write!(f, " order by {}", order.join(", "))?;
+            write!(f, " {} {} {}", Token::Order, Token::By, order.join(", "))?;
         }
 
         Ok(())
