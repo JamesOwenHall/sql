@@ -60,7 +60,7 @@ pub enum Number {
 }
 
 impl Number {
-    fn as_float(&self) -> f64 {
+    pub fn as_float(&self) -> f64 {
         match self {
             &Number::Int(i) => i as f64,
             &Number::Float(f) => f,
