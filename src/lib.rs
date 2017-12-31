@@ -10,6 +10,7 @@ pub mod parser;
 pub mod query;
 pub mod scanner;
 pub mod source;
+pub mod token;
 
 pub use answer::Answer;
 pub use data::{Data, Number};

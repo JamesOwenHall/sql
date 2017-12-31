@@ -2,7 +2,8 @@ use std::iter::Peekable;
 use aggregate::{AggregateCall, AggregateFunction};
 use expr::Expr;
 use query::{OrderField, Query, SortDirection};
-use scanner::{Scanner, Token};
+use scanner::Scanner;
+use token::Token;
 
 #[derive(Clone, Debug)]
 pub struct Parser<'a> {

@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 use aggregate::AggregateCall;
 use data::Data;
 use row::Row;
-use scanner::Token;
+use token::Token;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Expr {

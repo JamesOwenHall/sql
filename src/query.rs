@@ -1,6 +1,6 @@
 use std::fmt;
 use expr::Expr;
-use scanner::Token;
+use token::Token;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Query {
