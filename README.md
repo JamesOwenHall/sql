@@ -13,7 +13,7 @@ sql 'select id, name, balance from "fixtures/accounts.json"'
 ```
 
 ```
-"id"	"name"	"balance"
+id	name	balance
 1000	Alice	15.5
 1001	Bob	-50.08
 1002	Charlie	0
@@ -27,7 +27,7 @@ sql 'select id, name, balance from "fixtures/accounts.json" order by balance'
 ```
 
 ```
-"id"	"name"	"balance"
+id	name	balance
 1003	Denise	-1024.64
 1001	Bob	-50.08
 1002	Charlie	0
@@ -41,7 +41,7 @@ sql 'select sum(balance) from "fixtures/accounts.json"'
 ```
 
 ```
-sum("balance")
+sum(balance)
 -1059.22
 ```
 
@@ -52,7 +52,7 @@ sql 'select sum(balance) from "fixtures/accounts.json" where frozen'
 ```
 
 ```
-sum("balance")
+sum(balance)
 -1074.72
 ```
 
