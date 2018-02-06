@@ -50,55 +50,17 @@ impl Executor {
     }
 
     fn execute(&self, source: Source) -> Result<Answer, ExecuteError> {
-        let mut answer = if self.aggregate_calls.is_empty() {
-            self.execute_non_aggregate(source)?
-        } else {
-            self.execute_aggregate(source)?
-        };
-
+        let mut source = self.apply_condition(source);
+        source = self.compute_aggregates(source)?;
+        
+        let mut answer = self.apply_select(source)?;
         answer.sort(&self.order_indices);
         Ok(answer)
     }
 
-    fn execute_non_aggregate(&self, source: Source) -> Result<Answer, ExecuteError> {
-        let mut rows = Vec::new();
-        for row in source {
-            let row = row?;
-            if !self.passes_condition(&row) {
-                continue;
-            }
-
-            let output_row = self.query.select.iter()
-                .map(|field| field.eval(&row))
-                .collect();
-            rows.push(output_row);
-        }
-
-        Ok(Answer {
-            columns: self.get_columns(),
-            rows: rows,
-        })
-    }
-
-    fn execute_aggregate(&self, source: Source) -> Result<Answer, ExecuteError> {
-        let aggregates = self.build_aggregates(source)?;
-        let aggregate_rows = self.aggregates_to_rows(aggregates);
-
-        let mut rows = Vec::new();
-        for aggregate_row in aggregate_rows {
-            let output_row = self.query.select.iter()
-                .map(|field| field.eval(&aggregate_row))
-                .collect();
-            rows.push(output_row);
-        }
-
-        Ok(Answer {
-            columns: self.get_columns(),
-            rows: rows,
-        })
-    }
-
-    fn build_aggregates(&self, source: Source) -> Result<HashMap<Vec<Data>, Vec<Aggregate>>, ExecuteError> {
+    fn build_aggregates(&self,
+                        source: Source)
+                        -> Result<HashMap<Vec<Data>, Vec<Aggregate>>, ExecuteError> {
         let mut groups = HashMap::new();
         for row in source {
             let row = row?;
@@ -118,7 +80,7 @@ impl Executor {
         Ok(groups)
     }
 
-    fn aggregates_to_rows(&self, aggregates: HashMap<Vec<Data>, Vec<Aggregate>>) -> Vec<Row> {
+    fn aggregates_to_source(&self, aggregates: HashMap<Vec<Data>, Vec<Aggregate>>) -> Source {
         let mut rows = Vec::with_capacity(aggregates.len());
         for (group, aggregates) in aggregates {
             let mut row = Row::new();
@@ -129,10 +91,52 @@ impl Executor {
             for (index, val) in group.iter().enumerate() {
                 row.fields.insert(self.query.group[index].clone(), val.clone());
             }
-            rows.push(row);
+            rows.push(Ok(row));
         }
 
-        rows
+        Box::new(rows.into_iter())
+    }
+
+    fn apply_condition(&self, source: Source) -> Source {
+        let condition = match self.query.condition {
+            Some(ref cond) => cond.clone(),
+            None => return source,
+        };
+
+        Box::new(source.filter(move |row| {
+            match row {
+                &Err(_) => true,
+                &Ok(ref row) => condition.eval(row) == Data::Bool(true),
+            }
+        }))
+    }
+
+    fn compute_aggregates(&self, source: Source) -> Result<Source, ExecuteError> {
+        if self.aggregate_calls.is_empty() {
+            return Ok(source);
+        }
+
+        let aggregates = self.build_aggregates(source)?;
+        Ok(self.aggregates_to_source(aggregates))
+    }
+
+    fn apply_select(&self, source: Source) -> Result<Answer, ExecuteError> {
+        let mut rows = Vec::new();
+
+        for row in source {
+            let row = row?;
+            let output_row = self.query
+                .select
+                .iter()
+                .map(|field| field.eval(&row))
+                .collect();
+            rows.push(output_row);
+        }
+
+        Ok(Answer {
+            columns: self.get_columns(),
+            rows: rows,
+        })
     }
 
     fn passes_condition(&self, row: &Row) -> bool {
