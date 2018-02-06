@@ -64,10 +64,6 @@ impl Executor {
         let mut groups = HashMap::new();
         for row in source {
             let row = row?;
-            if !self.passes_condition(&row) {
-                continue;
-            }
-
             let group_aggregates = groups
                 .entry(self.get_group(&row))
                 .or_insert_with(|| self.make_aggregates());
@@ -137,13 +133,6 @@ impl Executor {
             columns: self.get_columns(),
             rows: rows,
         })
-    }
-
-    fn passes_condition(&self, row: &Row) -> bool {
-        match self.query.condition {
-            Some(ref cond) => cond.eval(row) == Data::Bool(true),
-            None => true,
-        }
     }
 
     fn get_columns(&self) -> Vec<String> {
