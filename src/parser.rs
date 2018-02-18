@@ -72,6 +72,7 @@ impl<'a> Parser<'a> {
         match self.scanner.next() {
             None => Err(ParseError::UnexpectedEOF),
             Some(Ok(Token::Identifier(i))) => self.parse_identifier(i),
+            Some(Ok(Token::Number(n))) => Ok(Expr::Number(n)),
             Some(Err(e)) => Err(e.into()),
             Some(Ok(t)) => Err(ParseError::UnexpectedToken(t)),
         }

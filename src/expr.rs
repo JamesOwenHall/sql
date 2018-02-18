@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 use aggregate::AggregateCall;
-use data::Data;
+use data::{Data, Number};
 use row::Row;
 use token::Token;
 
@@ -8,6 +8,7 @@ use token::Token;
 pub enum Expr {
     Column(String),
     AggregateCall(AggregateCall),
+    Number(Number),
     BinaryExpr {
         left: Box<Expr>,
         op: BinaryOp,
@@ -20,6 +21,7 @@ impl Expr {
         match *self {
             Expr::Column(_) => row.fields.get(self).cloned().unwrap_or(Data::Null),
             Expr::AggregateCall(_) => row.fields.get(self).cloned().unwrap_or(Data::Null),
+            Expr::Number(ref n) => Data::Number(n.clone()),
             Expr::BinaryExpr{ref left, ref op, ref right} => op.eval(left.eval(row), right.eval(row)),
         }
     }
@@ -41,7 +43,9 @@ impl Expr {
                 func(self);
                 call.argument.recurse(func);
             },
+            &Expr::Number(_) => func(self),
             &Expr::BinaryExpr{ref left, op: _, ref right} => {
+                func(self);
                 left.recurse(func);
                 right.recurse(func);
             },
@@ -54,6 +58,7 @@ impl Display for Expr {
         match self {
             &Expr::Column(ref name) => Token::Identifier(name.clone()).fmt(f),
             &Expr::AggregateCall(ref call) => write!(f, "{}({})", call.function, call.argument),
+            &Expr::Number(ref n) => write!(f, "{}", n),
             &Expr::BinaryExpr{ref left, ref op, ref right} => write!(f, "{} {} {}", left, op, right),
         }
     }
@@ -109,6 +114,13 @@ mod tests {
 
         let expr = Expr::AggregateCall(agg_call);
         assert_eq!(Data::Number(Number::Int(4)), expr.eval(&row));
+    }
+
+    #[test]
+    fn eval_number() {
+        let expr = Expr::Number(Number::Int(5));
+        let row = Row::new();
+        assert_eq!(Data::Number(Number::Int(5)), expr.eval(&row));
     }
 
     #[test]

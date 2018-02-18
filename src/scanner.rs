@@ -1,12 +1,13 @@
 use std::iter::Peekable;
-use std::str::Chars;
+use std::str::{Chars, FromStr};
+use data::Number;
 use parser::ParseError;
 use token::Token;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ScanError {
     UnexpectedEOF,
-    UnknownToken(char)
+    UnknownToken(char),
 }
 
 impl Into<ParseError> for ScanError {
@@ -56,6 +57,7 @@ impl<'a> Iterator for Scanner<'a> {
             '\'' => self.read_string(),
             '"' => self.read_quoted_identifier(),
             c if Self::is_letter(c) => Ok(self.read_identifier()),
+            c if Self::is_digit(c) => self.read_number(),
             c => Err(ScanError::UnknownToken(c)),
         })
     }
@@ -130,6 +132,33 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn read_number(&mut self) -> Result<Token> {
+        let mut buf = String::new();
+        let mut saw_decimal_point = false;
+
+        loop {
+            match self.input.peek() {
+                Some(&'.') if !saw_decimal_point => {
+                    saw_decimal_point = true;
+                    buf.push('.');
+                },
+                Some(&c) if Self::is_digit(c) => buf.push(c),
+                Some(_) => break,
+                None => break,
+            }
+
+            self.input.next();
+        }
+
+        let num = if saw_decimal_point {
+            Number::Float(f64::from_str(&buf).unwrap())
+        } else {
+            Number::Int(i64::from_str(&buf).unwrap())
+        };
+
+        Ok(Token::Number(num))
+    }
+
     fn is_space(c: char) -> bool {
         c == ' ' || c == '\t' || c == '\r' || c == '\n'
     }
@@ -146,6 +175,7 @@ impl<'a> Scanner<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use data::Number;
 
     #[test]
     fn symbols() {
@@ -181,6 +211,16 @@ mod tests {
         assert_eq!(scanner.next(), Some(Ok(Token::String("'".to_string()))));
         assert_eq!(scanner.next(), Some(Ok(Token::String("\n".to_string()))));
         assert_eq!(scanner.next(), Some(Ok(Token::String("\\".to_string()))));
+    }
+
+    #[test]
+    fn numbers() {
+        let mut scanner = Scanner::new("1 123 123.25 3.0");
+        assert_eq!(scanner.next(), Some(Ok(Token::Number(Number::Int(1)))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Number(Number::Int(123)))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Number(Number::Float(123.25)))));
+        assert_eq!(scanner.next(), Some(Ok(Token::Number(Number::Float(3.0)))));
+        assert_eq!(scanner.next(), None);
     }
 
     #[test]

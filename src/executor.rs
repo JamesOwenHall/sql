@@ -65,7 +65,7 @@ impl Executor {
         for row in source {
             let row = row?;
             let group_aggregates = groups
-                .entry(self.get_group(&row))
+                .entry(self.build_group(&row))
                 .or_insert_with(|| self.make_aggregates());
 
             for (i, aggregate) in group_aggregates.iter_mut().enumerate() {
@@ -141,7 +141,7 @@ impl Executor {
             .collect()
     }
 
-    fn get_group(&self, row: &Row) -> Vec<Data> {
+    fn build_group(&self, row: &Row) -> Vec<Data> {
         self.query.group.iter()
             .map(|field| field.eval(row))
             .collect()

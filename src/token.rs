@@ -1,4 +1,5 @@
 use std::fmt;
+use data::Number;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
@@ -12,6 +13,7 @@ pub enum Token {
     Desc,
     Identifier(String),
     String(String),
+    Number(Number),
     OpenParen,
     CloseParen,
     Comma,
@@ -59,6 +61,7 @@ impl fmt::Display for Token {
             &Token::Desc => write!(f, "desc"),
             &Token::Identifier(ref i) => Self::format_identifier(f, i),
             &Token::String(ref s) => Self::format_string(f, s, '\''),
+            &Token::Number(ref n) => write!(f, "{}", n),
             &Token::OpenParen => write!(f, "("),
             &Token::CloseParen => write!(f, ")"),
             &Token::Comma => write!(f, ","),
