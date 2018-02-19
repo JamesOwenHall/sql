@@ -70,6 +70,13 @@ pub enum BinaryOp {
 }
 
 impl BinaryOp {
+    pub fn maybe_from(t: &Token) -> Option<Self> {
+        match t {
+            &Token::Eq => Some(BinaryOp::Eq),
+            _ => None,
+        }
+    }
+
     pub fn eval(&self, left: Data, right: Data) -> Data {
         match self {
             &BinaryOp::Eq => Data::Bool(left == right),

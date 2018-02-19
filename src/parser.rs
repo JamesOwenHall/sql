@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use aggregate::{AggregateCall, AggregateFunction};
-use expr::Expr;
+use expr::{BinaryOp, Expr};
 use query::{OrderField, Query, SortDirection};
 use scanner::Scanner;
 use token::Token;
@@ -69,13 +69,31 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_expr(&mut self) -> Result<Expr> {
-        match self.scanner.next() {
-            None => Err(ParseError::UnexpectedEOF),
-            Some(Ok(Token::Identifier(i))) => self.parse_identifier(i),
-            Some(Ok(Token::Number(n))) => Ok(Expr::Number(n)),
-            Some(Err(e)) => Err(e.into()),
-            Some(Ok(t)) => Err(ParseError::UnexpectedToken(t)),
-        }
+        let left = match self.scanner.next() {
+            None => return Err(ParseError::UnexpectedEOF),
+            Some(Ok(Token::Identifier(i))) => self.parse_identifier(i)?,
+            Some(Ok(Token::Number(n))) => Expr::Number(n),
+            Some(Err(e)) => return Err(e.into()),
+            Some(Ok(t)) => return Err(ParseError::UnexpectedToken(t)),
+        };
+
+        let next = match self.scanner.peek().cloned() {
+            Some(Ok(t)) => t,
+            Some(Err(e)) => return Err(e.into()),
+            None => return Ok(left),
+        };
+
+        let op = match BinaryOp::maybe_from(&next) {
+            Some(op) => op,
+            None => return Ok(left),
+        };
+        self.scanner.next();
+
+        Ok(Expr::BinaryExpr{
+            left: Box::new(left),
+            op: op,
+            right: Box::new(self.parse_expr()?),
+        })
     }
 
     fn parse_select(&mut self) -> Result<Vec<Expr>> {
@@ -178,7 +196,7 @@ mod tests {
     fn parse_condition() {
         let inputs = vec![
             "select a from foo where a",
-            "select a from foo where a == b",
+            "select a from foo where a = b",
         ];
 
         for input in inputs {
